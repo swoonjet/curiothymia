@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artifact and Back</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0b;
+    --surface: #141416;
+    --surface2: #1c1c20;
+    --border: #2a2a30;
+    --text: #e8e6e1;
+    --text-dim: #8a8880;
+    --accent: #c4a882;
+    --accent2: #8b9dc3;
+    --warm: #d4a574;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; min-height: 100vh; }
+
+  .gallery-sidebar {
+    width: 72px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+    gap: 12px;
+    overflow-y: auto;
+    transition: width 0.3s ease;
+    position: relative;
+    z-index: 10;
+  }
+  .gallery-sidebar:hover { width: 200px; }
+  .gallery-sidebar .sidebar-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    writing-mode: vertical-rl;
+    transition: all 0.3s ease;
+  }
+  .gallery-sidebar:hover .sidebar-title {
+    writing-mode: horizontal-tb;
+    font-size: 11px;
+  }
+  .gallery-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .gallery-sidebar:hover .gallery-thumb {
+    width: 172px;
+    height: 96px;
+  }
+  .gallery-thumb:hover { border-color: var(--accent); transform: scale(1.05); }
+  .gallery-thumb.active { border-color: var(--accent); }
+  .gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .gallery-thumb .thumb-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.7);
+    font-size: 9px;
+    padding: 2px 4px;
+    color: var(--text-dim);
+    display: none;
+  }
+  .gallery-sidebar:hover .thumb-label { display: block; }
+  .gallery-count {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* ── START SCREEN ── */
+  .screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 40px; }
+  .screen.active { display: flex; }
+
+  #start-screen {
+    text-align: center;
+  }
+  .logo-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 52px;
+    font-weight: 300;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .logo-subtitle {
+    font-size: 13px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 60px;
+  }
+
+  .keyword-input-area {
+    max-width: 600px;
+    width: 100%;
+  }
+  .keyword-input-area label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .keyword-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+    min-height: 40px;
+    justify-content: center;
+  }
+  .keyword-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+  }
+  .keyword-chip .remove {
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+  }
+  .keyword-chip .remove:hover { color: var(--text); }
+
+  .keyword-field {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .keyword-field input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 24px;
+    font-size: 16px;
+    font-family: 'Cormorant Garamond', serif;
+    outline: none;
+    width: 300px;
+    transition: border-color 0.3s;
+  }
+  .keyword-field input:focus { border-color: var(--accent); }
+  .keyword-field input::placeholder { color: var(--text-dim); }
+
+  .btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 28px;
+    border-radius: 24px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .btn.primary:hover { background: var(--warm); border-color: var(--warm); }
+
+  .begin-btn {
+    margin-top: 32px;
+  }
+
+  .cycle-indicator {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    margin-top: 40px;
+  }
+
+  /* ── LOADING ── */
+  #loading-screen { text-align: center; }
+  .loading-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+  }
+  .loading-bar {
+    width: 200px;
+    height: 2px;
+    background: var(--surface2);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .loading-bar-inner {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.3s;
+    animation: loadPulse 2s ease-in-out infinite;
+  }
+  @keyframes loadPulse {
+    0% { width: 10%; }
+    50% { width: 80%; }
+    100% { width: 10%; }
+  }
+  .loading-sources {
+    margin-top: 16px;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  /* ── MOOD BOARD ── */
+  #board-screen {
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .board-header {
+    text-align: center;
+    margin-bottom: 24px;
+    width: 100%;
+  }
+  .board-keywords {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .board-meta {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  .mood-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: 120px;
+    gap: 6px;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .board-cell {
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .board-cell:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    z-index: 2;
+  }
+  .board-cell img, .board-cell video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .board-cell .cell-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 10px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .board-cell:hover .cell-overlay { opacity: 1; }
+  .cell-overlay .cell-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .cell-overlay .cell-source {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* Grid layout patterns for visual interest */
+  .board-cell.span-2h { grid-column: span 2; }
+  .board-cell.span-2v { grid-row: span 2; }
+  .board-cell.span-2x2 { grid-column: span 2; grid-row: span 2; }
+
+  .board-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 32px;
+    justify-content: center;
+  }
+
+  /* ── INTERROGATION ── */
+  #interrogation-screen {
+    text-align: center;
+  }
+  .interrogation-step {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+  .interrogation-question {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 300;
+    line-height: 1.4;
+    max-width: 600px;
+    margin-bottom: 32px;
+    color: var(--text);
+  }
+  .interrogation-context {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+  .interrogation-input {
+    width: 100%;
+    max-width: 500px;
+  }
+  .interrogation-input textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: 'Cormorant Garamond', serif;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.3s;
+  }
+  .interrogation-input textarea:focus { border-color: var(--accent); }
+  .interrogation-input textarea::placeholder { color: var(--text-dim); }
+
+  /* For step 4 - three keyword inputs */
+  .keyword-trio {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .keyword-trio input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 24px;
+    font-size: 16px;
+    font-family: 'Cormorant Garamond', serif;
+    outline: none;
+    width: 160px;
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+  .keyword-trio input:focus { border-color: var(--accent); }
+  .keyword-trio input::placeholder { color: var(--text-dim); }
+
+  .interrogation-nav {
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  /* Mini board shown during interrogation */
+  .mini-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    width: 320px;
+    margin: 0 auto 32px;
+    border-radius: 8px;
+    overflow: hidden;
+    opacity: 0.6;
+  }
+  .mini-board img {
+    width: 100%;
+    height: 60px;
+    object-fit: cover;
+  }
+
+  /* ── PREVIOUS ANSWERS ── */
+  .previous-answers {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    max-width: 500px;
+    width: 100%;
+  }
+  .prev-answer {
+    text-align: left;
+    margin-bottom: 12px;
+  }
+  .prev-answer .pa-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .prev-answer .pa-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  /* ── TRANSITIONS ── */
+  .fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── IMAGE LIGHTBOX ── */
+  .lightbox {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 40px;
+  }
+  .lightbox.active { display: flex; }
+  .lightbox img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+  .lightbox-info {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+  .lightbox-info .lb-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    color: var(--text);
+  }
+  .lightbox-info .lb-source {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ── FILE PROTOCOL WARNING ── */
+  .file-warning {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 40px;
+    text-align: center;
+  }
+  .file-warning.active { display: flex; }
+  .file-warning h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    margin-bottom: 16px;
+  }
+  .file-warning p {
+    color: var(--text-dim);
+    max-width: 480px;
+    line-height: 1.7;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  .file-warning code {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--accent);
+    margin: 8px 0;
+    font-family: monospace;
+    user-select: all;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* ── ERROR STATE ── */
+  .error-msg {
+    color: #c47070;
+    font-size: 13px;
+    margin-top: 12px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .mood-board { grid-template-columns: repeat(2, 1fr); }
+    .logo-title { font-size: 36px; }
+    .interrogation-question { font-size: 24px; }
+    .gallery-sidebar { width: 56px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- File protocol warning -->
+<div class="file-warning" id="fileWarning">
+  <h2>One small step first</h2>
+  <p>This app needs a local server to fetch images from museum and library collections. The browser blocks those requests when opening the file directly.</p>
+  <p>Double-click the launcher in your folder:</p>
+  <code>start-artifact-and-back.command</code>
+  <p>Or run this in Terminal from the folder:</p>
+  <code>python3 -m http.server 8899</code>
+  <p>Then open <a href="http://localhost:8899/artifact-and-back.html" style="color:var(--accent)">http://localhost:8899/artifact-and-back.html</a></p>
+</div>
+
+<div class="app">
+  <!-- Gallery Sidebar -->
+  <div class="gallery-sidebar" id="gallerySidebar">
+    <div class="sidebar-title">Gallery</div>
+    <div class="gallery-count" id="galleryCount"></div>
+    <div id="galleryThumbs"></div>
+  </div>
+
+  <!-- Main Area -->
+  <div class="main-area">
+
+    <!-- START SCREEN -->
+    <div class="screen active" id="start-screen">
+      <div class="logo-title fade-in">Artifact & Back</div>
+      <div class="logo-subtitle fade-in">A recursive exploration</div>
+
+      <div class="keyword-input-area fade-in">
+        <label>Enter up to five keywords</label>
+        <div class="keyword-chips" id="keywordChips"></div>
+        <div class="keyword-field">
+          <input type="text" id="keywordInput" placeholder="type a keyword…" maxlength="40" autofocus>
+          <button class="btn" onclick="addKeyword()">Add</button>
+        </div>
+        <button class="btn primary begin-btn" id="beginBtn" onclick="beginExploration()" style="display:none">Begin</button>
+      </div>
+      <div class="cycle-indicator" id="cycleIndicator"></div>
+    </div>
+
+    <!-- LOADING SCREEN -->
+    <div class="screen" id="loading-screen">
+      <div class="loading-text">Searching collections…</div>
+      <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+      <div class="loading-sources" id="loadingSources">Europeana · Art Institute of Chicago · Wikimedia Commons</div>
+    </div>
+
+    <!-- BOARD SCREEN -->
+    <div class="screen" id="board-screen">
+      <div class="board-header fade-in">
+        <div class="board-keywords" id="boardKeywords"></div>
+        <div class="board-meta" id="boardMeta"></div>
+      </div>
+      <div class="mood-board" id="moodBoard"></div>
+      <div class="board-actions fade-in">
+        <button class="btn primary" onclick="startInterrogation()">Interrogate</button>
+        <button class="btn" onclick="regenerateBoard()">Refresh Images</button>
+      </div>
+    </div>
+
+    <!-- INTERROGATION SCREEN -->
+    <div class="screen" id="interrogation-screen">
+      <div class="mini-board" id="miniBoard"></div>
+      <div class="interrogation-step" id="intStep"></div>
+      <div class="interrogation-question" id="intQuestion"></div>
+      <div class="interrogation-context" id="intContext"></div>
+      <div class="interrogation-input" id="intInputArea"></div>
+      <div class="interrogation-nav" id="intNav"></div>
+      <div class="previous-answers" id="prevAnswers"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightboxImg" src="">
+  <div class="lightbox-info">
+    <div class="lb-title" id="lbTitle"></div>
+    <div class="lb-source" id="lbSource"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// FILE PROTOCOL CHECK
+// ═══════════════════════════════════════════════
+if (window.location.protocol === 'file:') {
+  document.getElementById('fileWarning').classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const state = {
+  keywords: [],
+  cycle: 0,
+  boards: [],       // { keywords, images, answers, timestamp }
+  currentImages: [],
+  currentAnswers: {},
+  interrogationStep: 0
+};
+
+const QUESTIONS = [
+  {
+    step: 'Question 1 of 5',
+    question: 'What does this remind you of — and what does it make you feel?',
+    context: 'Look at the mood board. Let impressions surface without overthinking.',
+    type: 'textarea',
+    placeholder: 'It reminds me of… it makes me feel…'
+  },
+  {
+    step: 'Question 2 of 5',
+    question: 'Think of a metaphor for what you just described.',
+    context: '',
+    type: 'textarea',
+    placeholder: 'It\'s like…'
+  },
+  {
+    step: 'Question 3 of 5',
+    question: 'That metaphor is related to the idea of what?',
+    context: 'Name the underlying concept, theme, or force.',
+    type: 'textarea',
+    placeholder: 'The idea of…'
+  },
+  {
+    step: 'Question 4 of 5',
+    question: 'Break this down to its parts. What are three new keywords?',
+    context: 'These will seed your next mood board.',
+    type: 'keywords',
+    placeholder: ''
+  },
+  {
+    step: 'Question 5 of 5',
+    question: 'Before we move on — any final reflection on this cycle?',
+    context: 'Optional. Press continue to generate the next board.',
+    type: 'textarea',
+    placeholder: 'I notice that…'
+  }
+];
+
+// ═══════════════════════════════════════════════
+// KEYWORD INPUT
+// ═══════════════════════════════════════════════
+const keywordInput = document.getElementById('keywordInput');
+keywordInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') addKeyword();
+});
+
+function addKeyword() {
+  const val = keywordInput.value.trim().toLowerCase();
+  if (!val || state.keywords.length >= 5 || state.keywords.includes(val)) return;
+  state.keywords.push(val);
+  keywordInput.value = '';
+  renderKeywordChips();
+  if (state.keywords.length >= 1) document.getElementById('beginBtn').style.display = 'inline-block';
+}
+
+function removeKeyword(kw) {
+  state.keywords = state.keywords.filter(k => k !== kw);
+  renderKeywordChips();
+  if (state.keywords.length === 0) document.getElementById('beginBtn').style.display = 'none';
+}
+
+function renderKeywordChips() {
+  const container = document.getElementById('keywordChips');
+  container.innerHTML = state.keywords.map(kw =>
+    `<div class="keyword-chip">${kw} <span class="remove" onclick="removeKeyword('${kw}')">×</span></div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════
+// SCREEN NAVIGATION
+// ═══════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+// IMAGE SEARCH APIs
+// ═══════════════════════════════════════════════
+
+// Art Institute of Chicago - free, no key, CORS-enabled, high-quality art
+async function searchArtIC(query) {
+  try {
+    const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(query)}&fields=id,title,image_id,artist_display,date_display,thumbnail&limit=15`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return (data.data || [])
+      .filter(item => item.image_id)
+      .map(item => ({
+        title: item.title || 'Untitled',
+        artist: item.artist_display || '',
+        date: item.date_display || '',
+        imageUrl: `https://www.artic.edu/iiif/2/${item.image_id}/full/800,/0/default.jpg`,
+        thumbUrl: `https://www.artic.edu/iiif/2/${item.image_id}/full/400,/0/default.jpg`,
+        source: 'Art Institute of Chicago',
+        sourceUrl: `https://www.artic.edu/artworks/${item.id}`
+      }));
+  } catch (e) {
+    console.warn('AIC search failed:', e);
+    return [];
+  }
+}
+
+// Europeana - huge collection of institutional content
+async function searchEuropeana(query) {
+  try {
+    const key = 'api2demo';
+    const url = `https://api.europeana.eu/record/v2/search.json?wskey=${key}&query=${encodeURIComponent(query)}&media=true&thumbnail=true&rows=15&profile=rich`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return (data.items || [])
+      .filter(item => item.edmPreview && item.edmPreview[0])
+      .map(item => ({
+        title: (item.title && item.title[0]) || 'Untitled',
+        artist: (item.dcCreator && item.dcCreator[0]) || '',
+        date: (item.year && item.year[0]) || '',
+        imageUrl: item.edmPreview[0],
+        thumbUrl: item.edmPreview[0],
+        source: (item.dataProvider && item.dataProvider[0]) || 'Europeana',
+        sourceUrl: item.guid || '',
+        type: item.type || 'IMAGE'
+      }));
+  } catch (e) {
+    console.warn('Europeana search failed:', e);
+    return [];
+  }
+}
+
+// Wikimedia Commons - free institutional and public domain images
+async function searchWikimedia(query) {
+  try {
+    const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(query)}&gsrlimit=10&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=800&format=json&origin=*`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.query || !data.query.pages) return [];
+    return Object.values(data.query.pages)
+      .filter(p => p.imageinfo && p.imageinfo[0] && p.imageinfo[0].thumburl)
+      .map(p => {
+        const info = p.imageinfo[0];
+        const meta = info.extmetadata || {};
+        return {
+          title: (meta.ObjectName && meta.ObjectName.value) || p.title.replace('File:', ''),
+          artist: (meta.Artist && meta.Artist.value.replace(/<[^>]+>/g, '')) || '',
+          date: (meta.DateTimeOriginal && meta.DateTimeOriginal.value) || '',
+          imageUrl: info.thumburl,
+          thumbUrl: info.thumburl,
+          source: 'Wikimedia Commons',
+          sourceUrl: info.descriptionurl || ''
+        };
+      });
+  } catch (e) {
+    console.warn('Wikimedia search failed:', e);
+    return [];
+  }
+}
+
+// Search all sources and combine
+async function searchAllSources(keywords) {
+  const query = keywords.join(' ');
+  const searches = [
+    searchArtIC(query),
+    searchEuropeana(query),
+    searchWikimedia(query)
+  ];
+  // Also search individual keywords for variety
+  if (keywords.length > 1) {
+    const randomKw = keywords[Math.floor(Math.random() * keywords.length)];
+    searches.push(searchArtIC(randomKw));
+    searches.push(searchEuropeana(randomKw));
+  }
+
+  const results = await Promise.allSettled(searches);
+  let allImages = [];
+  results.forEach(r => {
+    if (r.status === 'fulfilled') allImages = allImages.concat(r.value);
+  });
+
+  // Deduplicate by imageUrl
+  const seen = new Set();
+  allImages = allImages.filter(img => {
+    if (seen.has(img.imageUrl)) return false;
+    seen.add(img.imageUrl);
+    return true;
+  });
+
+  // Shuffle for variety
+  for (let i = allImages.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allImages[i], allImages[j]] = [allImages[j], allImages[i]];
+  }
+
+  return allImages.slice(0, 16);
+}
+
+// ═══════════════════════════════════════════════
+// BEGIN EXPLORATION
+// ═══════════════════════════════════════════════
+async function beginExploration() {
+  if (state.keywords.length === 0) return;
+  state.cycle++;
+  showScreen('loading-screen');
+
+  try {
+    const images = await searchAllSources(state.keywords);
+    if (images.length === 0) {
+      showScreen('start-screen');
+      alert('No images found. Try different keywords.');
+      return;
+    }
+    state.currentImages = images;
+    state.currentAnswers = {};
+    renderMoodBoard();
+    showScreen('board-screen');
+  } catch (e) {
+    console.error('Search failed:', e);
+    showScreen('start-screen');
+    alert('Search failed. Please try again.');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// MOOD BOARD RENDERING
+// ═══════════════════════════════════════════════
+function renderMoodBoard() {
+  const boardEl = document.getElementById('moodBoard');
+  const keywordsEl = document.getElementById('boardKeywords');
+  const metaEl = document.getElementById('boardMeta');
+
+  keywordsEl.textContent = state.keywords.join(' · ');
+  metaEl.textContent = `Cycle ${state.cycle} · ${state.currentImages.length} artifacts · ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+
+  // Layout pattern — assign spans for visual interest
+  const patterns = [
+    'span-2x2', '', 'span-2v', '',
+    '', 'span-2h', '', '',
+    'span-2h', '', '', 'span-2v',
+    '', '', 'span-2h', ''
+  ];
+
+  boardEl.innerHTML = '';
+  state.currentImages.forEach((img, i) => {
+    const cell = document.createElement('div');
+    cell.className = `board-cell ${patterns[i % patterns.length]} fade-in`;
+    cell.style.animationDelay = `${i * 0.05}s`;
+    cell.onclick = () => openLightbox(img);
+
+    const imgEl = document.createElement('img');
+    imgEl.src = img.thumbUrl || img.imageUrl;
+    imgEl.alt = img.title;
+    imgEl.loading = 'lazy';
+    imgEl.onerror = function() { this.parentElement.style.display = 'none'; };
+
+    const overlay = document.createElement('div');
+    overlay.className = 'cell-overlay';
+    overlay.innerHTML = `
+      <div class="cell-title">${escapeHtml(img.title)}</div>
+      <div class="cell-source">${escapeHtml(img.source)}${img.date ? ' · ' + escapeHtml(img.date) : ''}</div>
+    `;
+
+    cell.appendChild(imgEl);
+    cell.appendChild(overlay);
+    boardEl.appendChild(cell);
+  });
+}
+
+async function regenerateBoard() {
+  showScreen('loading-screen');
+  const images = await searchAllSources(state.keywords);
+  if (images.length > 0) {
+    state.currentImages = images;
+    renderMoodBoard();
+  }
+  showScreen('board-screen');
+}
+
+// ═══════════════════════════════════════════════
+// LIGHTBOX
+// ═══════════════════════════════════════════════
+function openLightbox(img) {
+  document.getElementById('lightboxImg').src = img.imageUrl;
+  document.getElementById('lbTitle').textContent = img.title + (img.artist ? ` — ${img.artist}` : '');
+  document.getElementById('lbSource').textContent = img.source + (img.date ? ` · ${img.date}` : '');
+  document.getElementById('lightbox').classList.add('active');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// ═══════════════════════════════════════════════
+// INTERROGATION
+// ═══════════════════════════════════════════════
+function startInterrogation() {
+  state.interrogationStep = 0;
+  state.currentAnswers = {};
+  renderMiniBoard();
+  renderInterrogation();
+  showScreen('interrogation-screen');
+}
+
+function renderMiniBoard() {
+  const container = document.getElementById('miniBoard');
+  container.innerHTML = state.currentImages.slice(0, 8).map(img =>
+    `<img src="${img.thumbUrl || img.imageUrl}" alt="${escapeHtml(img.title)}" onerror="this.style.display='none'">`
+  ).join('');
+}
+
+function renderInterrogation() {
+  const q = QUESTIONS[state.interrogationStep];
+  document.getElementById('intStep').textContent = q.step;
+  document.getElementById('intQuestion').textContent = q.question;
+  document.getElementById('intContext').textContent = q.context;
+
+  // Show previous answer context for Q2+
+  if (state.interrogationStep === 1) {
+    document.getElementById('intContext').textContent = `You said: "${state.currentAnswers[0] || '...'}"`;
+  } else if (state.interrogationStep === 2) {
+    document.getElementById('intContext').textContent = `Your metaphor: "${state.currentAnswers[1] || '...'}"`;
+  } else if (state.interrogationStep === 3) {
+    document.getElementById('intContext').textContent = `The idea of: "${state.currentAnswers[2] || '...'}" — now decompose it.`;
+  }
+
+  const inputArea = document.getElementById('intInputArea');
+  if (q.type === 'keywords') {
+    inputArea.innerHTML = `
+      <div class="keyword-trio">
+        <input type="text" id="kw1" placeholder="keyword 1" maxlength="30">
+        <input type="text" id="kw2" placeholder="keyword 2" maxlength="30">
+        <input type="text" id="kw3" placeholder="keyword 3" maxlength="30">
+      </div>
+    `;
+    // Allow Enter to advance
+    inputArea.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') advanceInterrogation(); });
+    });
+  } else {
+    inputArea.innerHTML = `<textarea id="intTextarea" placeholder="${q.placeholder}" rows="3"></textarea>`;
+    const ta = document.getElementById('intTextarea');
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); advanceInterrogation(); }
+    });
+    ta.focus();
+  }
+
+  // Navigation
+  const nav = document.getElementById('intNav');
+  nav.innerHTML = `
+    ${state.interrogationStep > 0 ? '<button class="btn" onclick="prevInterrogation()">Back</button>' : ''}
+    <button class="btn primary" onclick="advanceInterrogation()">${state.interrogationStep === 4 ? 'Generate Next Board' : 'Continue'}</button>
+  `;
+
+  // Previous answers
+  renderPrevAnswers();
+}
+
+function renderPrevAnswers() {
+  const container = document.getElementById('prevAnswers');
+  const labels = ['Reminds / Feels', 'Metaphor', 'Related Idea', 'New Keywords', 'Reflection'];
+  let html = '';
+  for (let i = 0; i < state.interrogationStep; i++) {
+    if (state.currentAnswers[i]) {
+      html += `<div class="prev-answer"><div class="pa-label">${labels[i]}</div><div class="pa-text">${escapeHtml(state.currentAnswers[i])}</div></div>`;
+    }
+  }
+  container.innerHTML = html;
+}
+
+function getInterrogationValue() {
+  const q = QUESTIONS[state.interrogationStep];
+  if (q.type === 'keywords') {
+    const kw1 = document.getElementById('kw1').value.trim();
+    const kw2 = document.getElementById('kw2').value.trim();
+    const kw3 = document.getElementById('kw3').value.trim();
+    return [kw1, kw2, kw3].filter(Boolean).join(', ');
+  }
+  const ta = document.getElementById('intTextarea');
+  return ta ? ta.value.trim() : '';
+}
+
+function advanceInterrogation() {
+  const val = getInterrogationValue();
+  // Step 4 (keywords) requires at least one keyword
+  if (state.interrogationStep === 3 && !val) return;
+
+  state.currentAnswers[state.interrogationStep] = val;
+
+  if (state.interrogationStep < 4) {
+    state.interrogationStep++;
+    renderInterrogation();
+  } else {
+    // Save board to gallery and start next cycle
+    saveBoardToGallery();
+    startNextCycle();
+  }
+}
+
+function prevInterrogation() {
+  if (state.interrogationStep > 0) {
+    state.interrogationStep--;
+    renderInterrogation();
+  }
+}
+
+// ═══════════════════════════════════════════════
+// GALLERY
+// ═══════════════════════════════════════════════
+function saveBoardToGallery() {
+  state.boards.push({
+    keywords: [...state.keywords],
+    images: [...state.currentImages],
+    answers: { ...state.currentAnswers },
+    cycle: state.cycle,
+    timestamp: new Date().toISOString()
+  });
+  renderGallery();
+}
+
+function renderGallery() {
+  const thumbs = document.getElementById('galleryThumbs');
+  const count = document.getElementById('galleryCount');
+  count.textContent = state.boards.length > 0 ? state.boards.length : '';
+
+  thumbs.innerHTML = state.boards.map((board, i) => {
+    const coverImg = board.images[0];
+    return `
+      <div class="gallery-thumb ${i === state.boards.length - 1 ? 'active' : ''}" onclick="viewBoard(${i})">
+        <img src="${coverImg ? coverImg.thumbUrl || coverImg.imageUrl : ''}" alt="Board ${i + 1}">
+        <div class="thumb-label">${board.keywords.slice(0, 3).join(' · ')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function viewBoard(index) {
+  const board = state.boards[index];
+  state.keywords = [...board.keywords];
+  state.currentImages = [...board.images];
+  state.currentAnswers = { ...board.answers };
+  renderMoodBoard();
+  showScreen('board-screen');
+}
+
+// ═══════════════════════════════════════════════
+// NEXT CYCLE
+// ═══════════════════════════════════════════════
+function startNextCycle() {
+  // Extract new keywords from step 4
+  const kwString = state.currentAnswers[3] || '';
+  const newKeywords = kwString.split(',').map(k => k.trim().toLowerCase()).filter(Boolean).slice(0, 5);
+
+  if (newKeywords.length === 0) {
+    showScreen('start-screen');
+    return;
+  }
+
+  state.keywords = newKeywords;
+  renderKeywordChips();
+  document.getElementById('cycleIndicator').textContent = `Cycle ${state.cycle + 1}`;
+  beginExploration();
+}
+
+// ═══════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>

@@ -123,6 +123,84 @@
     text-shadow: 0 0 3px var(--black);
   }
 
+  /* ── Header bar ── */
+  .hdr {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 18;
+    height: 32px;
+    display: none; align-items: center;
+    padding: 0 14px;
+    background: rgba(10,10,11,0.6);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #1a1a1e;
+  }
+  .hdr--on { display: flex; }
+  .hdr-name {
+    font-family: var(--serif); font-size: 14px; font-weight: 400;
+    color: var(--bone); opacity: 0.6; letter-spacing: 0.02em;
+    margin-left: 68px;
+  }
+  .hdr-threads-btn {
+    margin-left: auto;
+    background: none; border: 1px solid #222; color: #444;
+    padding: 3px 10px; font-family: var(--mono); font-size: 7px;
+    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    transition: all 0.3s;
+  }
+  .hdr-threads-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Thread archive panel ── */
+  .tarch {
+    position: fixed; top: 32px; right: 0; bottom: 0; z-index: 25;
+    width: 340px;
+    background: rgba(14,14,16,0.95);
+    backdrop-filter: blur(12px);
+    border-left: 1px solid #1a1a1e;
+    transform: translateX(100%);
+    transition: transform 0.4s ease;
+    overflow-y: auto;
+    padding: 20px 16px;
+  }
+  .tarch--open { transform: translateX(0); }
+  .tarch::-webkit-scrollbar { width: 3px; }
+  .tarch::-webkit-scrollbar-thumb { background: #222; }
+  .tarch-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .tarch-title {
+    font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dim);
+  }
+  .tarch-close {
+    background: none; border: none; color: var(--dim); cursor: pointer;
+    font-family: var(--mono); font-size: 11px; padding: 2px 6px;
+    transition: color 0.2s;
+  }
+  .tarch-close:hover { color: var(--bone); }
+  .tarch-list { display: flex; flex-direction: column; gap: 12px; }
+  .tarch-item {
+    padding: 10px 12px;
+    background: rgba(26,26,30,0.6);
+    border-left: 2px solid #222;
+    cursor: default;
+    transition: border-color 0.2s;
+  }
+  .tarch-item:hover { border-color: var(--accent); }
+  .tarch-item .ta-cycle {
+    font-size: 7px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 4px;
+  }
+  .tarch-item .ta-text {
+    font-family: var(--serif); font-size: 14px; line-height: 1.4;
+    color: var(--bone); opacity: 0.8;
+  }
+  .tarch-item .ta-kw {
+    font-size: 7px; letter-spacing: 0.08em; color: var(--accent);
+    margin-top: 6px; opacity: 0.6;
+  }
+  .tarch-empty {
+    font-size: 8px; color: #333; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
   /* ── Canvas area ── */
   .canvas { flex: 1; position: relative; overflow: hidden; }
 
@@ -345,6 +423,21 @@
   <div class="canvas" id="canvas"></div>
 </div>
 
+<div class="hdr" id="hdr">
+  <span class="hdr-name">Curiothymia</span>
+  <button class="hdr-threads-btn" id="threadBtn" onclick="toggleArchive()">threads <span id="threadCount">0</span></button>
+</div>
+
+<div class="tarch" id="tarch">
+  <div class="tarch-head">
+    <span class="tarch-title">Thread Archive</span>
+    <button class="tarch-close" onclick="toggleArchive()">&times;</button>
+  </div>
+  <div class="tarch-list" id="tarchList">
+    <div class="tarch-empty">threads will appear here</div>
+  </div>
+</div>
+
 <div class="ov-cycle" id="ovCycle" aria-hidden="true"></div>
 <div class="ov-kw" id="ovKw">
   <div class="kc" id="kc"></div>
@@ -402,7 +495,7 @@
 const S = {
   seeds: [], kw: [], cycle: 0, running: false, paused: false,
   prev: [], images: [], queries: [], thread: '', hold: 10000,
-  boards: []
+  boards: [], seenUrls: [], threads: []
 };
 
 // ── Seeds ──
@@ -658,6 +751,7 @@ async function start() {
   S.kw = [...S.seeds]; S.running = true; S.paused = false; S.cycle = 0;
   document.getElementById('seed').classList.add('seed--gone');
   document.getElementById('volBtn').style.display = 'block';
+  document.getElementById('hdr').classList.add('hdr--on');
   while (S.running) {
     if (S.paused) { await sleep(300); continue; }
     await runCycle();
@@ -681,11 +775,13 @@ async function runCycle() {
   S.prev.push(...S.kw);
 
   setSt('searching', true);
+  // Send last 100 seen URLs to avoid repeats
+  const exclude = S.seenUrls.slice(-100);
   let images = [];
   try {
     const r = await fetch('/api/search', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ queries })
+      body: JSON.stringify({ queries, exclude })
     });
     images = (await r.json()).images || [];
   } catch {}
@@ -693,7 +789,7 @@ async function runCycle() {
     try {
       const r = await fetch('/api/search', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ queries: [S.kw.join(' ')] })
+        body: JSON.stringify({ queries: [S.kw.join(' ')], exclude })
       });
       images = (await r.json()).images || [];
     } catch {}
@@ -714,6 +810,10 @@ async function runCycle() {
   }
 
   S.images = images.slice(0, 14);
+  // Track seen URLs
+  S.images.forEach(img => {
+    S.seenUrls.push(img.imageUrl || img.thumbUrl);
+  });
   setSt(`${S.cycle}`, false);
 
   const comp = buildComp(S.images);
@@ -740,19 +840,29 @@ async function runCycle() {
       if (nm) next = nm[1].split(',').map(k => k.trim().toLowerCase()).filter(Boolean).slice(0, 5);
     }
   } catch {}
+
+  // Fallback thread if synthesis failed or Ollama offline
+  if (!thread) {
+    const sources = [...new Set(S.images.map(i => i.source))].slice(0, 3).join(', ');
+    thread = `Cycle ${S.cycle}: ${S.kw.join(', ')} — ${S.images.length} artifacts from ${sources}`;
+  }
+
   S.thread = thread;
 
-  if (thread && next.length) {
-    document.getElementById('tfl').textContent = `${String(S.cycle).padStart(2, '0')}`;
-    document.getElementById('tft').textContent = thread;
-    document.getElementById('tfn').innerHTML = next.map((k, i) =>
-      `<span class="tfk" style="animation-delay:${200 + i * 150}ms">${esc(k)}</span>`
-    ).join('');
-    document.getElementById('tf').classList.add('tf--on');
-    await skippableSleep(10000);
-    document.getElementById('tf').classList.remove('tf--on');
-    await sleep(700);
-  }
+  // Save to thread archive
+  S.threads.push({ cycle: S.cycle, thread, kw: [...S.kw], next: [...next] });
+  renderThreadArchive();
+
+  // Always show the thread flash
+  document.getElementById('tfl').textContent = `${String(S.cycle).padStart(2, '0')}`;
+  document.getElementById('tft').textContent = thread;
+  document.getElementById('tfn').innerHTML = next.map((k, i) =>
+    `<span class="tfk" style="animation-delay:${200 + i * 150}ms">${esc(k)}</span>`
+  ).join('');
+  document.getElementById('tf').classList.add('tf--on');
+  await skippableSleep(10000);
+  document.getElementById('tf').classList.remove('tf--on');
+  await sleep(700);
 
   // Check cycle limit
   if (S.cycle >= 40) {
@@ -763,6 +873,24 @@ async function runCycle() {
   }
 
   S.kw = next.length ? next : S.kw;
+}
+
+// ── Thread archive ──
+function renderThreadArchive() {
+  const list = document.getElementById('tarchList');
+  document.getElementById('threadCount').textContent = S.threads.length;
+
+  list.innerHTML = S.threads.slice().reverse().map(t =>
+    `<div class="tarch-item">
+      <div class="ta-cycle">${String(t.cycle).padStart(2, '0')}</div>
+      <div class="ta-text">${esc(t.thread)}</div>
+      <div class="ta-kw">${t.next.join(' / ')}</div>
+    </div>`
+  ).join('') || '<div class="tarch-empty">threads will appear here</div>';
+}
+
+function toggleArchive() {
+  document.getElementById('tarch').classList.toggle('tarch--open');
 }
 
 // ── Controls ──
@@ -776,7 +904,8 @@ function resume() {
   document.getElementById('pov').classList.remove('pov--on');
 }
 function restart() {
-  S.running = false; S.paused = false; S.cycle = 0; S.prev = []; S.seeds = []; S.boards = [];
+  S.running = false; S.paused = false; S.cycle = 0; S.prev = []; S.seeds = [];
+  S.boards = []; S.seenUrls = []; S.threads = [];
   document.getElementById('pov').classList.remove('pov--on');
   document.getElementById('endPrompt').classList.remove('end-prompt--on');
   document.getElementById('st').style.display = 'none';
@@ -787,6 +916,10 @@ function restart() {
   document.getElementById('ovQ').innerHTML = '';
   document.getElementById('gal').classList.remove('gal--open');
   document.getElementById('galList').innerHTML = '';
+  document.getElementById('hdr').classList.remove('hdr--on');
+  document.getElementById('tarch').classList.remove('tarch--open');
+  document.getElementById('tarchList').innerHTML = '<div class="tarch-empty">threads will appear here</div>';
+  document.getElementById('threadCount').textContent = '0';
   document.getElementById('seed').classList.remove('seed--gone');
   document.getElementById('go').style.display = 'none';
   document.getElementById('volBtn').style.display = 'none';

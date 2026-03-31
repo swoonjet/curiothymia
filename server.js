@@ -82,7 +82,29 @@ One query per line. No numbering, labels, or quotes. Just the short search terms
     res.json({ queries: queries.length > 2 ? queries : keywords });
   } catch (e) {
     console.error('Expand error:', e.message);
-    res.json({ queries: keywords, fallback: true });
+    // Fallback: generate variety without Ollama by combining keywords with random modifiers
+    const modifiers = [
+      'macro photography', 'aerial view', 'microscope', 'satellite', 'specimen',
+      'cross section', 'ancient', 'contemporary', 'fossil', 'crystal',
+      'underwater', 'infrared', 'x-ray', 'time lapse', 'closeup texture',
+      'botanical illustration', 'diagram', 'landscape', 'architecture', 'sculpture',
+      'ceramic', 'textile', 'mineral', 'insect', 'deep sea', 'nebula',
+      'erosion', 'growth pattern', 'migration', 'topographic', 'bioluminescence'
+    ];
+    // Shuffle modifiers
+    for (let i = modifiers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [modifiers[i], modifiers[j]] = [modifiers[j], modifiers[i]];
+    }
+    const fallbackQueries = [];
+    // Mix keywords with random modifiers
+    for (let i = 0; i < Math.min(6, modifiers.length); i++) {
+      const kw = keywords[i % keywords.length];
+      fallbackQueries.push(`${kw} ${modifiers[i]}`);
+    }
+    // Add some modifier-only queries for variety
+    fallbackQueries.push(modifiers[6], modifiers[7]);
+    res.json({ queries: fallbackQueries, fallback: true });
   }
 });
 
@@ -92,10 +114,11 @@ One query per line. No numbering, labels, or quotes. Just the short search terms
 // ═══════════════════════════════════════════════
 app.post('/api/search', async (req, res) => {
   try {
-    const { queries } = req.body;
+    const { queries, exclude = [] } = req.body;
     if (!queries || queries.length === 0) {
       return res.json({ images: [], total: 0 });
     }
+    const excludeSet = new Set(exclude);
 
     const allResults = [];
 
@@ -148,8 +171,8 @@ app.post('/api/search', async (req, res) => {
       return !TEXT_REJECT.test(t);
     });
 
-    // Deduplicate
-    const seen = new Set();
+    // Deduplicate and exclude previously seen images
+    const seen = new Set(excludeSet);
     const unique = filtered.filter(img => {
       const key = img.imageUrl || img.thumbUrl;
       if (!key || seen.has(key)) return false;

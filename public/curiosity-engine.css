@@ -1,0 +1,814 @@
+/* ══════════════════════════════════════════════════════════════
+   CURIOSITY ENGINE — Design System
+   Minimal Maximalist. Vignelli's grid meets Carson's chaos.
+   ══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+/* ── DESIGN TOKENS ── */
+:root {
+  /* Palette — warm blacks, bone whites, one accent */
+  --ce-black:      #0b0b0c;
+  --ce-ink:        #141416;
+  --ce-graphite:   #1e1e22;
+  --ce-slate:      #2a2a30;
+  --ce-mid:        #4a4a52;
+  --ce-dim:        #7a7872;
+  --ce-muted:      #a09a90;
+  --ce-bone:       #e8e4dc;
+  --ce-white:      #f5f2ec;
+  --ce-accent:     #c8a87a;       /* warm gold — used sparingly */
+  --ce-accent-cool:#8b9dc3;       /* steel blue — data/labels only */
+
+  /* Typography */
+  --font-display:  'Instrument Serif', Georgia, serif;
+  --font-body:     'Space Grotesk', system-ui, sans-serif;
+  --font-mono:     'IBM Plex Mono', 'SF Mono', monospace;
+
+  /* Type scale */
+  --text-hero:     clamp(72px, 10vw, 120px);
+  --text-display:  clamp(36px, 5vw, 64px);
+  --text-title:    clamp(24px, 3vw, 40px);
+  --text-body:     clamp(13px, 1.2vw, 15px);
+  --text-label:    clamp(9px, 0.8vw, 11px);
+  --text-micro:    9px;
+
+  /* Spacing */
+  --gap-xs:  4px;
+  --gap-sm:  8px;
+  --gap-md:  16px;
+  --gap-lg:  32px;
+  --gap-xl:  64px;
+  --gap-2xl: 128px;
+
+  /* Grid */
+  --board-gap:     3px;           /* tight gutters = tension */
+  --board-row:     minmax(100px, 1fr);
+
+  /* Animation */
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:   cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast:  200ms;
+  --duration-std:   400ms;
+  --duration-slow:  800ms;
+  --duration-crawl: 1600ms;
+
+  /* Blend & overlay */
+  --overlay-dark:  rgba(11, 11, 12, 0.65);
+  --overlay-warm:  rgba(200, 168, 122, 0.08);
+  --overlay-cool:  rgba(139, 157, 195, 0.06);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   1. BASE RESET & FOUNDATION
+   ══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--ce-black);
+  color: var(--ce-bone);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--text-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   2. TYPOGRAPHY SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+/* Display — Instrument Serif for warmth + authority */
+.type-hero {
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--ce-white);
+}
+
+.type-display {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: 400;
+  line-height: 1.0;
+  letter-spacing: -0.02em;
+  color: var(--ce-bone);
+}
+
+.type-title {
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+/* Body — Space Grotesk for geometric clarity */
+.type-body {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: 300;
+  line-height: 1.55;
+  color: var(--ce-muted);
+  max-width: 55ch;     /* ~70-75% at typical container widths */
+}
+
+/* Labels — IBM Plex Mono for machine voice */
+.type-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ce-dim);
+}
+
+.type-micro {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ce-mid);
+}
+
+/* Keyword display — the engine's voice */
+.type-keyword {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 2.5vw, 32px);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--ce-accent);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   3. MOOD BOARD — CONTAINER
+   ══════════════════════════════════════════════════════════════ */
+
+.mood-board-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  padding: var(--gap-md);
+  overflow: hidden;
+}
+
+.mood-board {
+  display: grid;
+  gap: var(--board-gap);
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  /* Default layout — overridden by layout classes */
+  grid-template-columns: repeat(6, 1fr);
+  grid-auto-rows: var(--board-row);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   4. FIVE GRID LAYOUTS — Rotate each cycle
+   Each layout has a distinct compositional character.
+   Apply one class to .mood-board per cycle.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── LAYOUT A: "THE MONUMENT"
+   One massive hero image, small satellites cluster around edges.
+   Hero dominates 60%+ of viewport. Rest is dense mosaic.
+   ────────────────────────────────────────────────────────────── */
+.layout-monument {
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(4, minmax(120px, 1fr));
+}
+.layout-monument .cell:nth-child(1) {
+  grid-column: 1 / 5;
+  grid-row: 1 / 4;
+}
+.layout-monument .cell:nth-child(2) { grid-column: 5 / 7; grid-row: 1 / 2; }
+.layout-monument .cell:nth-child(3) { grid-column: 5 / 6; grid-row: 2 / 3; }
+.layout-monument .cell:nth-child(4) { grid-column: 6 / 7; grid-row: 2 / 3; }
+.layout-monument .cell:nth-child(5) { grid-column: 5 / 7; grid-row: 3 / 4; }
+.layout-monument .cell:nth-child(6) { grid-column: 1 / 3; grid-row: 4 / 5; }
+.layout-monument .cell:nth-child(7) { grid-column: 3 / 5; grid-row: 4 / 5; }
+.layout-monument .cell:nth-child(8) { grid-column: 5 / 7; grid-row: 4 / 5; }
+
+
+/* ── LAYOUT B: "THE SPREAD"
+   Asymmetric editorial spread. Two columns of unequal width.
+   Left column = tall vertical image. Right = stacked horizontals.
+   Like opening a magazine to a portfolio page.
+   ────────────────────────────────────────────────────────────── */
+.layout-spread {
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: repeat(4, minmax(100px, 1fr));
+}
+.layout-spread .cell:nth-child(1) {
+  grid-column: 1 / 2;
+  grid-row: 1 / 5;           /* Full-height left column */
+}
+.layout-spread .cell:nth-child(2) { grid-column: 2 / 4; grid-row: 1 / 2; }
+.layout-spread .cell:nth-child(3) { grid-column: 2 / 3; grid-row: 2 / 3; }
+.layout-spread .cell:nth-child(4) { grid-column: 3 / 4; grid-row: 2 / 3; }
+.layout-spread .cell:nth-child(5) { grid-column: 2 / 4; grid-row: 3 / 4; }
+.layout-spread .cell:nth-child(6) { grid-column: 2 / 3; grid-row: 4 / 5; }
+.layout-spread .cell:nth-child(7) { grid-column: 3 / 4; grid-row: 4 / 5; }
+
+
+/* ── LAYOUT C: "THE SCATTER"
+   Dense, almost chaotic. Lots of small cells with 2 medium ones
+   breaking the rhythm. Carson energy — things don't quite line up
+   on purpose. Achieved by mixing span sizes unpredictably.
+   ────────────────────────────────────────────────────────────── */
+.layout-scatter {
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(4, minmax(90px, 1fr));
+}
+.layout-scatter .cell:nth-child(1) { grid-column: 1 / 2; grid-row: 1 / 2; }
+.layout-scatter .cell:nth-child(2) { grid-column: 2 / 4; grid-row: 1 / 3; } /* medium */
+.layout-scatter .cell:nth-child(3) { grid-column: 4 / 5; grid-row: 1 / 2; }
+.layout-scatter .cell:nth-child(4) { grid-column: 5 / 6; grid-row: 1 / 3; }
+.layout-scatter .cell:nth-child(5) { grid-column: 1 / 2; grid-row: 2 / 3; }
+.layout-scatter .cell:nth-child(6) { grid-column: 4 / 5; grid-row: 2 / 3; }
+.layout-scatter .cell:nth-child(7) { grid-column: 1 / 3; grid-row: 3 / 5; } /* medium */
+.layout-scatter .cell:nth-child(8) { grid-column: 3 / 4; grid-row: 3 / 4; }
+.layout-scatter .cell:nth-child(9) { grid-column: 4 / 6; grid-row: 3 / 4; }
+.layout-scatter .cell:nth-child(10) { grid-column: 3 / 5; grid-row: 4 / 5; }
+.layout-scatter .cell:nth-child(11) { grid-column: 5 / 6; grid-row: 4 / 5; }
+
+
+/* ── LAYOUT D: "THE BREATH"
+   Sparse. 3-4 images with generous negative space.
+   Images float in a sea of black. Contemplative. The anti-Pinterest.
+   ────────────────────────────────────────────────────────────── */
+.layout-breath {
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(5, minmax(80px, 1fr));
+  min-height: 85vh;
+}
+.layout-breath .cell:nth-child(1) {
+  grid-column: 2 / 5;
+  grid-row: 1 / 3;
+}
+.layout-breath .cell:nth-child(2) {
+  grid-column: 6 / 8;
+  grid-row: 2 / 4;
+}
+.layout-breath .cell:nth-child(3) {
+  grid-column: 1 / 3;
+  grid-row: 4 / 6;
+}
+.layout-breath .cell:nth-child(4) {
+  grid-column: 5 / 7;
+  grid-row: 4 / 5;
+}
+/* Remaining cells hidden in this layout — only show 4 best images */
+.layout-breath .cell:nth-child(n+5) {
+  display: none;
+}
+
+
+/* ── LAYOUT E: "THE WALL"
+   Full density. Tiled edge to edge, nearly no gaps.
+   Maximalist — overwhelm with quantity. Think: Aby Warburg's Mnemosyne Atlas.
+   ────────────────────────────────────────────────────────────── */
+.layout-wall {
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: minmax(140px, auto);
+  gap: 2px;            /* Hairline gaps for maximum density */
+}
+.layout-wall .cell:nth-child(3) {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+.layout-wall .cell:nth-child(7) {
+  grid-column: span 2;
+}
+/* Everything else is 1x1 — pure brick pattern with two disruptions */
+
+
+/* ══════════════════════════════════════════════════════════════
+   5. CELL STYLING — The image containers
+   ══════════════════════════════════════════════════════════════ */
+
+.cell {
+  position: relative;
+  overflow: hidden;
+  background: var(--ce-ink);
+  cursor: pointer;
+}
+
+.cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--duration-slow) var(--ease-out),
+              filter var(--duration-std) var(--ease-out);
+}
+
+.cell:hover img {
+  transform: scale(1.04);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   6. BLENDED OVERLAYS — The experimental layer
+   ══════════════════════════════════════════════════════════════ */
+
+/*
+   OVERLAY PHILOSOPHY:
+   - Overlays are compositional tools, not readability crutches.
+   - They blend images into the dark background and create
+     a unified tonal field across disparate museum images.
+   - Edge-anchored only. Never darken the middle of an image.
+*/
+
+/* Base overlay — subtle warm tint unifying color temperatures */
+.cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--overlay-warm);
+  mix-blend-mode: color;
+  transition: opacity var(--duration-std) var(--ease-out);
+}
+
+/* Edge fade — anchored to bottom edge, fades UP (never mid-image) */
+.cell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(11, 11, 12, 0.7) 0%,
+    rgba(11, 11, 12, 0.15) 25%,
+    transparent 45%
+  );
+  transition: opacity var(--duration-std) var(--ease-out);
+}
+
+.cell:hover::after {
+  opacity: 0.5;     /* Reveal more of the image on hover */
+}
+
+/* Blend mode variants — apply to specific cells for variety */
+.cell--multiply::before {
+  background: var(--ce-accent);
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+}
+
+.cell--screen::before {
+  background: var(--ce-accent-cool);
+  opacity: 0.04;
+  mix-blend-mode: screen;
+}
+
+.cell--luminosity::before {
+  mix-blend-mode: luminosity;
+  background: var(--ce-graphite);
+  opacity: 0.3;
+}
+
+/* Desaturate all cells slightly — unifies the palette.
+   Some museum images are garishly lit; this tames them. */
+.mood-board--desaturate .cell img {
+  filter: saturate(0.7) contrast(1.05);
+}
+.mood-board--desaturate .cell:hover img {
+  filter: saturate(0.85) contrast(1.05);
+}
+
+/* Full monochrome mode — for contemplative cycles */
+.mood-board--mono .cell img {
+  filter: grayscale(1) contrast(1.1);
+}
+.mood-board--mono .cell:hover img {
+  filter: grayscale(0.5) contrast(1.05);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   7. KEYWORD & CYCLE OVERLAY TYPOGRAPHY
+   Floating over the board, not inside cells.
+   ══════════════════════════════════════════════════════════════ */
+
+.board-meta {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Cycle number — massive, ghostly, anchored top-left */
+.cycle-number {
+  position: fixed;
+  top: var(--gap-lg);
+  left: var(--gap-lg);
+  font-family: var(--font-display);
+  font-size: clamp(80px, 12vw, 200px);
+  font-weight: 400;
+  line-height: 0.85;
+  color: var(--ce-white);
+  opacity: 0.04;
+  z-index: 5;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* Keyword strip — bottom of viewport, serif, tracked out */
+.keyword-strip {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: var(--gap-lg) var(--gap-lg) var(--gap-lg);
+  background: linear-gradient(
+    to top,
+    var(--ce-black) 0%,
+    rgba(11, 11, 12, 0.85) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.keyword-strip__words {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 56px);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--ce-bone);
+  letter-spacing: -0.01em;
+  max-width: 70%;
+}
+
+.keyword-strip__words span {
+  display: inline-block;
+  opacity: 0;
+  animation: keyword-rise 600ms var(--ease-out) forwards;
+}
+
+/* Stagger each keyword */
+.keyword-strip__words span:nth-child(1) { animation-delay: 0ms; }
+.keyword-strip__words span:nth-child(2) { animation-delay: 100ms; }
+.keyword-strip__words span:nth-child(3) { animation-delay: 200ms; }
+.keyword-strip__words span:nth-child(4) { animation-delay: 300ms; }
+.keyword-strip__words span:nth-child(5) { animation-delay: 400ms; }
+.keyword-strip__words span:nth-child(6) { animation-delay: 500ms; }
+.keyword-strip__words span:nth-child(7) { animation-delay: 600ms; }
+.keyword-strip__words span:nth-child(8) { animation-delay: 700ms; }
+
+@keyframes keyword-rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Separator between keywords */
+.keyword-strip__sep {
+  color: var(--ce-mid);
+  margin: 0 0.15em;
+  font-weight: 300;
+}
+
+/* Cycle label — small mono, above the keywords */
+.keyword-strip__cycle {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ce-dim);
+  margin-bottom: var(--gap-sm);
+}
+
+/* Query tags — scattered across top of board */
+.query-cloud {
+  position: fixed;
+  top: var(--gap-lg);
+  right: var(--gap-lg);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--gap-xs);
+  pointer-events: none;
+  max-width: 300px;
+}
+
+.query-tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  color: var(--ce-mid);
+  padding: 3px 8px;
+  border: 1px solid var(--ce-slate);
+  background: rgba(11, 11, 12, 0.6);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  animation: query-fade 400ms var(--ease-out) forwards;
+}
+
+.query-tag:nth-child(1) { animation-delay: 800ms; }
+.query-tag:nth-child(2) { animation-delay: 950ms; }
+.query-tag:nth-child(3) { animation-delay: 1100ms; }
+.query-tag:nth-child(4) { animation-delay: 1250ms; }
+.query-tag:nth-child(5) { animation-delay: 1400ms; }
+.query-tag:nth-child(6) { animation-delay: 1550ms; }
+.query-tag:nth-child(7) { animation-delay: 1700ms; }
+.query-tag:nth-child(8) { animation-delay: 1850ms; }
+
+@keyframes query-fade {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 0.5; transform: translateX(0); }
+}
+
+
+/* Cell info overlay — only on hover, anchored to bottom edge */
+.cell-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: var(--gap-md) var(--gap-md) var(--gap-sm);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.cell:hover .cell-info {
+  opacity: 1;
+}
+
+.cell-info__title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--ce-white);
+}
+
+.cell-info__source {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ce-dim);
+  margin-top: 2px;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   8. CYCLE TRANSITIONS
+   Board A fades out, Board B fades in.
+   ══════════════════════════════════════════════════════════════ */
+
+/*
+   TRANSITION STRATEGY:
+   Use two stacked .mood-board-wrapper elements.
+   - Current board: visible, z-index: 1
+   - Next board: hidden, z-index: 2
+   - On transition: next fades in over current, then current is removed.
+
+   This creates a dissolve / cross-fade. The slight overlap
+   lets images from two cycles blend momentarily — intentional.
+*/
+
+.mood-board-wrapper {
+  transition: opacity var(--duration-crawl) var(--ease-in-out);
+}
+
+/* Transition states — apply via JS */
+.mood-board-wrapper--entering {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.mood-board-wrapper--visible {
+  opacity: 1;
+  z-index: 1;
+}
+
+.mood-board-wrapper--exiting {
+  opacity: 0;
+  z-index: 0;
+}
+
+/* Cell stagger on board entrance */
+.mood-board-wrapper--entering.mood-board-wrapper--visible .cell {
+  opacity: 0;
+  animation: cell-enter var(--duration-slow) var(--ease-out) forwards;
+}
+
+/* Stagger via custom property set in JS */
+.cell {
+  animation-delay: var(--stagger, 0ms);
+}
+
+@keyframes cell-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Interstitial flash — brief moment of pure black between cycles.
+   Optional. Add .transition-flash to body for 200ms, then remove. */
+.transition-flash::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--ce-black);
+  z-index: 100;
+  animation: flash-out 1200ms var(--ease-in-out) forwards;
+  pointer-events: none;
+}
+
+@keyframes flash-out {
+  0%   { opacity: 1; }
+  30%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   9. SYNTHESIS / THINKING STATE
+   Shown between cycles while the engine expands keywords.
+   ══════════════════════════════════════════════════════════════ */
+
+.thinking-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: rgba(11, 11, 12, 0.92);
+  backdrop-filter: blur(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+
+.thinking-overlay--active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.thinking-overlay__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ce-dim);
+  margin-bottom: var(--gap-lg);
+}
+
+.thinking-overlay__thread {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--ce-bone);
+  text-align: center;
+  max-width: 65%;
+}
+
+.thinking-overlay__keywords {
+  display: flex;
+  gap: var(--gap-md);
+  margin-top: var(--gap-xl);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.thinking-keyword {
+  font-family: var(--font-display);
+  font-size: clamp(16px, 2vw, 24px);
+  color: var(--ce-accent);
+  padding: var(--gap-sm) var(--gap-md);
+  border: 1px solid rgba(200, 168, 122, 0.2);
+  opacity: 0;
+  animation: keyword-rise 500ms var(--ease-out) forwards;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   10. ENGINE STATUS BAR
+   ══════════════════════════════════════════════════════════════ */
+
+.engine-status {
+  position: fixed;
+  top: var(--gap-md);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: 6px 14px;
+  background: rgba(11, 11, 12, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--ce-slate);
+}
+
+.engine-status__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ce-mid);
+}
+
+.engine-status__dot--active {
+  background: var(--ce-accent);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.engine-status__text {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ce-dim);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   11. RESPONSIVE
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .mood-board {
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-rows: auto !important;
+  }
+
+  /* Reset all nth-child grid placements on mobile */
+  .mood-board .cell {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+
+  /* Allow one hero on mobile */
+  .mood-board .cell:first-child {
+    grid-column: 1 / -1 !important;
+    min-height: 250px;
+  }
+
+  .keyword-strip__words {
+    max-width: 100%;
+    font-size: 24px;
+  }
+
+  .cycle-number {
+    font-size: 80px;
+  }
+
+  .query-cloud {
+    display: none;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   12. UTILITY CLASSES
+   ══════════════════════════════════════════════════════════════ */
+
+.u-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.u-no-scroll {
+  overflow: hidden;
+}

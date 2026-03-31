@@ -1,0 +1,17 @@
+{
+  "name": "curiosity-engine",
+  "version": "1.0.0",
+  "description": "A recursive art exploration engine powered by Ollama",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["art", "exploration", "ollama", "mood-board"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

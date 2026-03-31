@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Curiothymia</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400&display=swap');
+
+  :root {
+    --black: #0a0a0b;
+    --ink: #141416;
+    --dim: #444;
+    --muted: #777;
+    --bone: #ddd8d0;
+    --accent: #c8a87a;
+    --cool: #8b9dc3;
+    --mono: 'IBM Plex Mono', monospace;
+    --serif: 'Instrument Serif', Georgia, serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--black); color: var(--bone);
+    font-family: var(--mono);
+    overflow: hidden; width: 100vw; height: 100vh;
+  }
+
+  /* ── Seed screen ── */
+  .seed {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; background: var(--black);
+    transition: opacity 1s ease;
+  }
+  .seed--gone { opacity: 0; pointer-events: none; }
+  .seed h1 {
+    font-family: var(--serif); font-size: clamp(28px, 5vw, 56px);
+    font-weight: 400; letter-spacing: -0.02em; margin-bottom: 4px;
+  }
+  .seed .sub {
+    font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 48px;
+  }
+  .seed .chips {
+    display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+    margin-bottom: 12px; min-height: 36px;
+  }
+  .chip {
+    font-family: var(--serif); font-size: 17px; padding: 6px 16px;
+    background: #1a1a1e; border: 1px solid #2a2a30;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chip .x {
+    cursor: pointer; font-family: var(--mono); font-size: 11px; color: var(--dim);
+  }
+  .chip .x:hover { color: var(--bone); }
+  .seed .row { display: flex; gap: 6px; }
+  .seed input {
+    background: var(--ink); border: 1px solid #2a2a30; color: var(--bone);
+    padding: 10px 18px; font-family: var(--serif); font-size: 16px;
+    outline: none; width: 240px;
+  }
+  .seed input:focus { border-color: var(--accent); }
+  .seed input::placeholder { color: #333; }
+  .sbtn {
+    background: none; border: 1px solid #2a2a30; color: var(--dim);
+    padding: 10px 18px; font-family: var(--mono); font-size: 8px;
+    letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
+    transition: all 0.3s;
+  }
+  .sbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .seed .go {
+    margin-top: 24px; background: var(--accent); border-color: var(--accent);
+    color: var(--black); display: none;
+  }
+  .seed .go:hover { background: var(--bone); }
+
+  /* ── Main layout ── */
+  .app { display: flex; width: 100vw; height: 100vh; }
+
+  /* ── Left gallery sidebar ── */
+  .gal {
+    width: 0; min-width: 0;
+    background: var(--ink);
+    border-right: 1px solid #1a1a1e;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transition: width 0.4s ease, min-width 0.4s ease;
+    z-index: 15;
+    flex-shrink: 0;
+  }
+  .gal--open { width: 72px; min-width: 72px; }
+  .gal-head {
+    padding: 10px 0;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .gal-title {
+    font-size: 7px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--dim); writing-mode: vertical-rl;
+    margin: 0 auto;
+  }
+  .gal--open .gal-title { writing-mode: horizontal-tb; }
+  .gal-list {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    padding: 4px 8px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .gal-list::-webkit-scrollbar { width: 0; }
+  .gt {
+    width: 54px; height: 36px;
+    border: 1px solid transparent;
+    cursor: pointer; overflow: hidden;
+    flex-shrink: 0; position: relative;
+    opacity: 0.5; transition: all 0.2s;
+  }
+  .gt:hover { opacity: 1; border-color: var(--accent); }
+  .gt.active { opacity: 1; border-color: var(--accent); }
+  .gt img { width: 100%; height: 100%; object-fit: cover; }
+  .gt .gn {
+    position: absolute; bottom: 0; right: 1px;
+    font-size: 6px; color: #555; letter-spacing: 0.05em;
+    text-shadow: 0 0 3px var(--black);
+  }
+
+  /* ── Canvas area ── */
+  .canvas { flex: 1; position: relative; overflow: hidden; }
+
+  .comp {
+    position: absolute; inset: 0;
+    transition: opacity 2s ease;
+  }
+  .comp--entering { opacity: 0; }
+  .comp--visible { opacity: 1; }
+  .comp--exiting { opacity: 0; }
+
+  /* Image layers — overlap, no borders */
+  .lyr {
+    position: absolute; overflow: hidden;
+    opacity: 0; transition: opacity 1.2s ease;
+    cursor: pointer;
+  }
+  .lyr--on { opacity: var(--op, 1); }
+  .lyr img {
+    display: block; width: 100%; height: 100%; object-fit: cover;
+  }
+
+  /* ── Overlays ── */
+  .ov-cycle {
+    position: fixed; top: 10px; left: 82px; z-index: 10;
+    font-family: var(--serif); font-size: clamp(40px, 7vw, 100px);
+    font-weight: 400; color: var(--bone); opacity: 0.03;
+    mix-blend-mode: overlay; pointer-events: none; line-height: 0.85;
+  }
+  .ov-kw {
+    position: fixed; bottom: 12px; left: 82px; z-index: 10;
+    pointer-events: none;
+  }
+  .ov-kw .kc {
+    font-size: 7px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #2a2a2a; margin-bottom: 2px;
+  }
+  .ov-kw .kw {
+    font-family: var(--serif); font-size: clamp(11px, 1.4vw, 18px);
+    color: var(--bone); opacity: 0.35;
+  }
+  .ov-kw .kw span {
+    display: inline-block; opacity: 0;
+    animation: rise 0.5s ease forwards;
+  }
+  .ov-kw .sep { color: #222; margin: 0 0.1em; }
+  @keyframes rise { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; } }
+
+  .ov-q {
+    position: fixed; top: 10px; right: 12px; z-index: 10;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+    pointer-events: none;
+  }
+  .qt {
+    font-size: 7px; letter-spacing: 0.05em; color: #2a2a2a;
+    padding: 1px 4px;
+    opacity: 0; animation: qf 0.3s ease forwards;
+  }
+  @keyframes qf { from { opacity: 0; transform: translateX(3px); } to { opacity: 0.3; } }
+
+  .ov-st {
+    position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+    z-index: 20; display: none; align-items: center; gap: 4px;
+    padding: 3px 8px; background: rgba(10,10,11,0.4);
+    backdrop-filter: blur(6px);
+  }
+  .ov-st .dot { width: 4px; height: 4px; border-radius: 50%; background: #333; }
+  .ov-st .dot--on { background: var(--accent); animation: p 1.2s ease infinite; }
+  @keyframes p { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+  .ov-st .stxt { font-size: 7px; letter-spacing: 0.1em; text-transform: uppercase; color: #333; }
+
+  /* ── Thread flash ── */
+  .tf {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px;
+    background: rgba(10,10,11,0.92); backdrop-filter: blur(20px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.8s ease;
+  }
+  .tf--on { opacity: 1; }
+  .tf .tfl { font-size: 7px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
+  .tf .tft {
+    font-family: var(--serif); font-size: clamp(15px, 2.2vw, 30px);
+    font-weight: 400; color: var(--bone); text-align: center;
+    max-width: 50%; line-height: 1.3;
+  }
+  .tf .tfn { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+  .tf .tf-close {
+    margin-top: 16px;
+    background: none; border: 1px solid #2a2a30; color: var(--dim);
+    padding: 6px 16px; font-family: var(--mono); font-size: 7px;
+    letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
+    transition: all 0.3s;
+  }
+  .tf .tf-close:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── End prompt ── */
+  .end-prompt {
+    position: fixed; inset: 0; z-index: 55;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px;
+    background: rgba(10,10,11,0.9); backdrop-filter: blur(16px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+  .end-prompt--on { opacity: 1; pointer-events: auto; }
+  .end-prompt .ep-count {
+    font-size: 7px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim);
+  }
+  .end-prompt .ep-msg {
+    font-family: var(--serif); font-size: clamp(16px, 2.5vw, 28px);
+    color: var(--bone); text-align: center; max-width: 45%; line-height: 1.3;
+  }
+  .end-prompt .ep-btns { display: flex; gap: 10px; margin-top: 6px; }
+  .tf .tfk {
+    font-family: var(--serif); font-size: clamp(10px, 1.2vw, 15px);
+    color: var(--accent); padding: 3px 10px;
+    border: 1px solid rgba(200,168,122,0.15);
+    opacity: 0; animation: rise 0.4s ease forwards;
+  }
+
+  /* ── Pause ── */
+  .pov {
+    position: fixed; inset: 0; z-index: 55;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px;
+    background: rgba(10,10,11,0.8); backdrop-filter: blur(12px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  .pov--on { opacity: 1; pointer-events: auto; }
+  .pov .pl { font-size: 7px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
+  .pov .pt {
+    font-family: var(--serif); font-size: clamp(13px, 1.8vw, 22px);
+    color: var(--bone); text-align: center; max-width: 45%; line-height: 1.3;
+  }
+  .pov .pb { display: flex; gap: 10px; margin-top: 4px; }
+
+  /* ── Gallery preview overlay ── */
+  .gal-preview {
+    position: fixed; inset: 0; z-index: 30;
+    background: rgba(10,10,11,0.85);
+    backdrop-filter: blur(8px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+    overflow: hidden;
+  }
+  .gal-preview--on { opacity: 1; pointer-events: auto; }
+  .gal-preview .gp-close {
+    position: absolute; top: 16px; right: 20px; z-index: 32;
+    background: rgba(10,10,11,0.8); border: 1px solid var(--bone);
+    color: var(--bone);
+    padding: 10px 24px; font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(8px);
+  }
+  .gal-preview .gp-close:hover { background: var(--bone); color: var(--black); }
+  .gal-preview .gp-info {
+    position: absolute; bottom: 12px; left: 82px; z-index: 32;
+    pointer-events: none;
+  }
+  .gal-preview .gp-info .gp-cycle {
+    font-size: 7px; letter-spacing: 0.12em; text-transform: uppercase; color: #333;
+  }
+  .gal-preview .gp-info .gp-kw {
+    font-family: var(--serif); font-size: clamp(11px, 1.4vw, 18px);
+    color: var(--bone); opacity: 0.4;
+  }
+  .gal-preview .gp-canvas {
+    position: absolute; inset: 0;
+  }
+
+  /* ── Volume toggle ── */
+  .vol-toggle {
+    position: fixed; bottom: 12px; right: 12px; z-index: 20;
+    background: rgba(10,10,11,0.5); border: 1px solid #1e1e22;
+    backdrop-filter: blur(6px);
+    color: #333; padding: 5px 10px;
+    font-family: var(--mono); font-size: 7px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.3s;
+    display: none;
+  }
+  .vol-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .vol-toggle--on { color: var(--muted); border-color: #333; }
+
+  /* ── Lightbox ── */
+  .lb {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(10,10,11,0.95);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; cursor: pointer; padding: 40px;
+  }
+  .lb--on { display: flex; }
+  .lb img { max-width: 85%; max-height: 75%; object-fit: contain; }
+  .lb .lbt { font-family: var(--serif); font-size: 13px; margin-top: 10px; color: var(--bone); }
+  .lb .lbs { font-size: 7px; letter-spacing: 0.08em; color: var(--dim); margin-top: 2px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div class="seed" id="seed">
+  <h1>Curiothymia</h1>
+  <div class="sub" style="color:var(--bone);letter-spacing:0.25em;">Let your mind wander</div>
+  <div class="chips" id="chips"></div>
+  <div class="row">
+    <input type="text" id="inp" placeholder="a word, an idea..." maxlength="40" autofocus>
+    <button class="sbtn" onclick="addSeed()">add</button>
+  </div>
+  <button class="sbtn go" id="go" onclick="start()">start</button>
+</div>
+
+<div class="app">
+  <div class="gal" id="gal">
+    <div class="gal-head"><span class="gal-title">threads</span></div>
+    <div class="gal-list" id="galList"></div>
+  </div>
+  <div class="canvas" id="canvas"></div>
+</div>
+
+<div class="ov-cycle" id="ovCycle" aria-hidden="true"></div>
+<div class="ov-kw" id="ovKw">
+  <div class="kc" id="kc"></div>
+  <div class="kw" id="kwW"></div>
+</div>
+<div class="ov-q" id="ovQ"></div>
+<div class="ov-st" id="st">
+  <div class="dot" id="dot"></div>
+  <span class="stxt" id="stxt"></span>
+</div>
+
+<div class="tf" id="tf">
+  <div class="tfl" id="tfl"></div>
+  <div class="tft" id="tft"></div>
+  <div class="tfn" id="tfn"></div>
+  <button class="tf-close" onclick="skipThread()">continue</button>
+</div>
+
+<div class="end-prompt" id="endPrompt">
+  <div class="ep-count" id="epCount"></div>
+  <div class="ep-msg">40 threads explored. Start a new journey?</div>
+  <div class="ep-btns">
+    <button class="sbtn" onclick="keepGoing()">keep going</button>
+    <button class="sbtn" onclick="restart()">new seeds</button>
+  </div>
+</div>
+
+<div class="pov" id="pov">
+  <div class="pl">paused</div>
+  <div class="pt" id="pt"></div>
+  <div class="pb">
+    <button class="sbtn" onclick="resume()">continue</button>
+    <button class="sbtn" onclick="restart()">new seeds</button>
+  </div>
+</div>
+
+<button class="vol-toggle" id="volBtn" onclick="toggleAudio()">sound off</button>
+
+<div class="gal-preview" id="gp">
+  <button class="gp-close" onclick="closeGp()">close</button>
+  <div class="gp-canvas" id="gpCanvas"></div>
+  <div class="gp-info">
+    <div class="gp-cycle" id="gpCycle"></div>
+    <div class="gp-kw" id="gpKw"></div>
+  </div>
+</div>
+
+<div class="lb" id="lb" onclick="closeLb()">
+  <img id="lbI" src="">
+  <div class="lbt" id="lbT"></div>
+  <div class="lbs" id="lbS"></div>
+</div>
+
+<script>
+const S = {
+  seeds: [], kw: [], cycle: 0, running: false, paused: false,
+  prev: [], images: [], queries: [], thread: '', hold: 10000,
+  boards: []
+};
+
+// ── Seeds ──
+const inp = document.getElementById('inp');
+inp.addEventListener('keydown', e => { if (e.key === 'Enter') addSeed(); });
+
+function addSeed() {
+  const v = inp.value.trim().toLowerCase();
+  if (!v || S.seeds.length >= 5 || S.seeds.includes(v)) return;
+  S.seeds.push(v); inp.value = '';
+  renderChips();
+  document.getElementById('go').style.display = 'inline-block';
+}
+function remSeed(k) {
+  S.seeds = S.seeds.filter(s => s !== k); renderChips();
+  if (!S.seeds.length) document.getElementById('go').style.display = 'none';
+}
+function renderChips() {
+  document.getElementById('chips').innerHTML = S.seeds.map(s =>
+    `<div class="chip">${esc(s)}<span class="x" onclick="remSeed('${esc(s)}')">\u00d7</span></div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════
+// COMPOSITION — Overlapping collage, one hero
+// ═══════════════════════════════════════════════
+const BLENDS = ['multiply','screen','overlay','soft-light','luminosity','color-dodge','hard-light'];
+const GRADES = [
+  'sepia(0.2) saturate(0.7)',
+  'hue-rotate(10deg) saturate(0.8)',
+  'saturate(0.4) brightness(1.1)',
+  'grayscale(0.4) contrast(1.1)',
+  'saturate(1.1) hue-rotate(-6deg)',
+  'brightness(0.9) contrast(1.1) saturate(0.6)',
+  'grayscale(1) contrast(1.15)',
+  'none'
+];
+
+function buildComp(images) {
+  const comp = document.createElement('div');
+  comp.className = 'comp comp--entering';
+
+  const cEl = document.getElementById('canvas');
+  const vw = cEl.offsetWidth;
+  const vh = cEl.offsetHeight;
+  const count = Math.min(images.length, 14);
+
+  // Image 0 is always the HERO — much bigger than the rest
+  // Pick 1-2 ghost indices (blended, semi-transparent)
+  const ghostCount = Math.floor(rand(1, 3));
+  const ghostSet = new Set();
+  while (ghostSet.size < ghostCount) {
+    const gi = Math.floor(rand(1, count));
+    ghostSet.add(gi);
+  }
+  // Pick 2-3 regular images to get a random blend mode at full opacity
+  const blendCount = Math.floor(rand(2, 4));
+  const blendSet = new Set();
+  while (blendSet.size < blendCount) {
+    const bi = Math.floor(rand(1, count));
+    if (!ghostSet.has(bi)) blendSet.add(bi);
+  }
+
+  for (let i = 0; i < count; i++) {
+    const img = images[i];
+    const isHero = (i === 0);
+    const isGhost = ghostSet.has(i);
+
+    const lyr = document.createElement('div');
+    lyr.className = 'lyr';
+
+    let x, y, w, h, op, blend, grade, z;
+
+    if (isHero) {
+      // Hero: covers 55-80% of viewport, slight offset from center
+      w = vw * rand(0.55, 0.8);
+      h = vh * rand(0.55, 0.8);
+      x = rand(-w * 0.05, vw - w * 0.95);
+      y = rand(-h * 0.05, vh - h * 0.95);
+      op = 1;
+      blend = 'normal';
+      grade = Math.random() < 0.2 ? GRADES[Math.floor(rand(0, GRADES.length))] : 'none';
+      z = 5; // hero sits mid-stack
+    } else if (isGhost) {
+      // Ghost: blended overlay, can be large
+      w = vw * rand(0.3, 0.7);
+      h = vh * rand(0.3, 0.7);
+      x = rand(-w * 0.15, vw - w * 0.85);
+      y = rand(-h * 0.15, vh - h * 0.85);
+      op = rand(0.08, 0.3);
+      blend = BLENDS[Math.floor(rand(0, BLENDS.length))];
+      grade = GRADES[Math.floor(rand(0, GRADES.length))];
+      z = 15 + i; // ghosts on top
+    } else {
+      // Regular: overlapping placement, full opacity, varied sizes
+      // Some behind hero, some in front
+      const sizeRoll = Math.random();
+      if (sizeRoll < 0.3) {
+        // Small piece
+        w = vw * rand(0.12, 0.25);
+        h = vh * rand(0.12, 0.25);
+      } else if (sizeRoll < 0.7) {
+        // Medium
+        w = vw * rand(0.2, 0.4);
+        h = vh * rand(0.2, 0.4);
+      } else {
+        // Large supporting
+        w = vw * rand(0.35, 0.55);
+        h = vh * rand(0.35, 0.55);
+      }
+
+      // Place around the viewport — allow overlap with hero and edges
+      x = rand(-w * 0.1, vw - w * 0.6);
+      y = rand(-h * 0.1, vh - h * 0.6);
+      op = 1;
+      blend = blendSet.has(i) ? BLENDS[Math.floor(rand(0, BLENDS.length))] : 'normal';
+      grade = Math.random() < 0.25 ? GRADES[Math.floor(rand(0, GRADES.length))] : 'none';
+      // Alternate z: some behind hero (1-4), some in front (6-14)
+      z = (i % 3 === 0) ? rand(1, 4) : rand(6, 14);
+      z = Math.floor(z);
+    }
+
+    lyr.style.cssText = `
+      left:${x}px; top:${y}px; width:${w}px; height:${h}px;
+      --op:${op}; mix-blend-mode:${blend}; z-index:${z};
+    `;
+
+    const imgEl = document.createElement('img');
+    imgEl.src = img.thumbUrl || img.imageUrl;
+    imgEl.alt = img.title || '';
+    imgEl.loading = i < 4 ? 'eager' : 'lazy';
+    imgEl.crossOrigin = 'anonymous';
+    if (grade !== 'none') imgEl.style.filter = grade;
+    imgEl.onerror = function() { this.parentElement.remove(); };
+
+    // Detect white background on load → set multiply blend
+    imgEl.addEventListener('load', function() {
+      if (detectWhiteBg(this)) {
+        this.parentElement.style.mixBlendMode = 'multiply';
+      }
+    });
+
+    lyr.appendChild(imgEl);
+    lyr.addEventListener('click', e => { e.stopPropagation(); openLb(img); });
+    comp.appendChild(lyr);
+  }
+
+  return comp;
+}
+
+function showComp(comp) {
+  const canvas = document.getElementById('canvas');
+  const current = canvas.querySelector('.comp--visible');
+
+  canvas.appendChild(comp);
+  comp.offsetHeight;
+
+  const layers = comp.querySelectorAll('.lyr');
+  layers.forEach((l, i) => setTimeout(() => l.classList.add('lyr--on'), 100 + i * 100));
+
+  requestAnimationFrame(() => {
+    comp.classList.remove('comp--entering');
+    comp.classList.add('comp--visible');
+    if (current) {
+      current.classList.remove('comp--visible');
+      current.classList.add('comp--exiting');
+      setTimeout(() => { if (current.parentElement) current.remove(); }, 2500);
+    }
+  });
+}
+
+// ── Overlays ──
+function updateOv() {
+  document.getElementById('ovCycle').textContent = String(S.cycle).padStart(2, '0');
+  document.getElementById('kc').textContent =
+    `${String(S.cycle).padStart(2, '0')} \u2014 ${S.images.length} \u2014 ${S.queries.length} paths`;
+  document.getElementById('kwW').innerHTML = S.kw.map((k, i) => {
+    const sep = i < S.kw.length - 1 ? '<span class="sep">/</span>' : '';
+    return `<span style="animation-delay:${i * 70}ms">${esc(k)}</span>${sep}`;
+  }).join('');
+  document.getElementById('ovQ').innerHTML = S.queries.slice(0, 8).map((t, i) =>
+    `<span class="qt" style="animation-delay:${400 + i * 70}ms">${esc(t)}</span>`
+  ).join('');
+}
+
+function setSt(t, on) {
+  document.getElementById('st').style.display = 'flex';
+  document.getElementById('dot').className = on ? 'dot dot--on' : 'dot';
+  document.getElementById('stxt').textContent = t;
+}
+
+// ═══════════════════════════════════════════════
+// GALLERY SIDEBAR
+// ═══════════════════════════════════════════════
+function saveBoard() {
+  const thumb = S.images[0] ? (S.images[0].thumbUrl || S.images[0].imageUrl) : '';
+  S.boards.push({
+    cycle: S.cycle, kw: [...S.kw], queries: [...S.queries],
+    images: [...S.images], thumbUrl: thumb
+  });
+  renderGal();
+}
+
+function renderGal() {
+  const g = document.getElementById('gal');
+  g.classList.add('gal--open');
+  const list = document.getElementById('galList');
+  list.innerHTML = S.boards.map((b, i) =>
+    `<div class="gt ${i === S.boards.length - 1 ? 'active' : ''}" onclick="viewBoard(${i})">
+      <img src="${b.thumbUrl}" alt="cycle ${b.cycle}">
+      <span class="gn">${String(b.cycle).padStart(2, '0')}</span>
+    </div>`
+  ).join('');
+  list.scrollTop = list.scrollHeight;
+}
+
+function viewBoard(idx) {
+  const b = S.boards[idx];
+  if (!b) return;
+
+  // Build comp into the preview overlay — doesn't touch the main canvas
+  const gpCanvas = document.getElementById('gpCanvas');
+  gpCanvas.innerHTML = '';
+
+  const previewComp = buildComp(b.images);
+  previewComp.classList.remove('comp--entering');
+  previewComp.classList.add('comp--visible');
+  // Make layers visible immediately
+  gpCanvas.appendChild(previewComp);
+  setTimeout(() => {
+    previewComp.querySelectorAll('.lyr').forEach(l => l.classList.add('lyr--on'));
+  }, 50);
+
+  document.getElementById('gpCycle').textContent =
+    `thread ${String(b.cycle).padStart(2, '0')} \u2014 ${b.images.length} artifacts`;
+  document.getElementById('gpKw').textContent = b.kw.join(' / ');
+
+  document.getElementById('gp').classList.add('gal-preview--on');
+  document.querySelectorAll('.gt').forEach((t, i) => t.classList.toggle('active', i === idx));
+}
+
+function closeGp() {
+  document.getElementById('gp').classList.remove('gal-preview--on');
+  // Re-highlight current cycle in gallery
+  document.querySelectorAll('.gt').forEach((t, i) =>
+    t.classList.toggle('active', i === S.boards.length - 1));
+}
+
+// ═══════════════════════════════════════════════
+// ENGINE
+// ═══════════════════════════════════════════════
+async function start() {
+  S.kw = [...S.seeds]; S.running = true; S.paused = false; S.cycle = 0;
+  document.getElementById('seed').classList.add('seed--gone');
+  document.getElementById('volBtn').style.display = 'block';
+  while (S.running) {
+    if (S.paused) { await sleep(300); continue; }
+    await runCycle();
+  }
+}
+
+async function runCycle() {
+  S.cycle++;
+  setSt('expanding', true);
+
+  let queries = [...S.kw];
+  try {
+    const r = await fetch('/api/expand', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keywords: S.kw, cycle: S.cycle, previousKeywords: S.prev })
+    });
+    const d = await r.json();
+    if (d.queries?.length) queries = d.queries;
+  } catch {}
+  S.queries = queries;
+  S.prev.push(...S.kw);
+
+  setSt('searching', true);
+  let images = [];
+  try {
+    const r = await fetch('/api/search', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ queries })
+    });
+    images = (await r.json()).images || [];
+  } catch {}
+  if (!images.length) {
+    try {
+      const r = await fetch('/api/search', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ queries: [S.kw.join(' ')] })
+      });
+      images = (await r.json()).images || [];
+    } catch {}
+  }
+  if (!images.length) { setSt('retrying', false); await sleep(2000); return; }
+
+  // LLaVA curation — score images for interestingness
+  if (images.length > 14) {
+    setSt('curating', true);
+    try {
+      const r = await fetch('/api/curate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images: images.slice(0, 20), keywords: S.kw, count: 14 })
+      });
+      const d = await r.json();
+      if (d.images?.length) images = d.images;
+    } catch {}
+  }
+
+  S.images = images.slice(0, 14);
+  setSt(`${S.cycle}`, false);
+
+  const comp = buildComp(S.images);
+  showComp(comp);
+  updateOv();
+  saveBoard();
+  evolveSoundscape();
+
+  await sleep(S.hold);
+  if (!S.running || S.paused) return;
+
+  setSt('synthesizing', true);
+  let thread = '', next = [...S.kw];
+  try {
+    const r = await fetch('/api/synthesize', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keywords: S.kw, answers: {}, imageDescriptions: '', cycle: S.cycle })
+    });
+    const d = await r.json();
+    if (d.response) {
+      const tm = d.response.match(/THREAD:\s*(.+?)(?:\n|NEXT)/is);
+      const nm = d.response.match(/NEXT:\s*(.+)/i);
+      if (tm) thread = tm[1].trim();
+      if (nm) next = nm[1].split(',').map(k => k.trim().toLowerCase()).filter(Boolean).slice(0, 5);
+    }
+  } catch {}
+  S.thread = thread;
+
+  if (thread && next.length) {
+    document.getElementById('tfl').textContent = `${String(S.cycle).padStart(2, '0')}`;
+    document.getElementById('tft').textContent = thread;
+    document.getElementById('tfn').innerHTML = next.map((k, i) =>
+      `<span class="tfk" style="animation-delay:${200 + i * 150}ms">${esc(k)}</span>`
+    ).join('');
+    document.getElementById('tf').classList.add('tf--on');
+    await skippableSleep(10000);
+    document.getElementById('tf').classList.remove('tf--on');
+    await sleep(700);
+  }
+
+  // Check cycle limit
+  if (S.cycle >= 40) {
+    document.getElementById('epCount').textContent = `${S.cycle} threads completed`;
+    document.getElementById('endPrompt').classList.add('end-prompt--on');
+    S.paused = true;
+    return;
+  }
+
+  S.kw = next.length ? next : S.kw;
+}
+
+// ── Controls ──
+function pause() {
+  S.paused = true;
+  document.getElementById('pt').textContent = S.thread || '';
+  document.getElementById('pov').classList.add('pov--on');
+}
+function resume() {
+  S.paused = false;
+  document.getElementById('pov').classList.remove('pov--on');
+}
+function restart() {
+  S.running = false; S.paused = false; S.cycle = 0; S.prev = []; S.seeds = []; S.boards = [];
+  document.getElementById('pov').classList.remove('pov--on');
+  document.getElementById('endPrompt').classList.remove('end-prompt--on');
+  document.getElementById('st').style.display = 'none';
+  document.getElementById('canvas').innerHTML = '';
+  document.getElementById('ovCycle').textContent = '';
+  document.getElementById('kwW').innerHTML = '';
+  document.getElementById('kc').textContent = '';
+  document.getElementById('ovQ').innerHTML = '';
+  document.getElementById('gal').classList.remove('gal--open');
+  document.getElementById('galList').innerHTML = '';
+  document.getElementById('seed').classList.remove('seed--gone');
+  document.getElementById('go').style.display = 'none';
+  document.getElementById('volBtn').style.display = 'none';
+  if (S.audio) S.audio.master.gain.setTargetAtTime(0, S.audio.ctx.currentTime, 0.2);
+  audioOn = false;
+  renderChips(); inp.focus();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeLb(); closeGp(); if (S.running && !S.paused) pause(); }
+});
+
+// ── Lightbox ──
+function openLb(img) {
+  document.getElementById('lbI').src = img.imageUrl;
+  document.getElementById('lbT').textContent = img.title + (img.artist ? ` \u2014 ${img.artist}` : '');
+  document.getElementById('lbS').textContent = img.source + (img.date ? ` \u00b7 ${img.date}` : '');
+  document.getElementById('lb').classList.add('lb--on');
+}
+function closeLb() { document.getElementById('lb').classList.remove('lb--on'); }
+
+// ═══════════════════════════════════════════════
+// AMBIENT AUDIO — Default OFF, toggle on/off
+// ═══════════════════════════════════════════════
+const VOL = 0.06; // master volume when on (quiet)
+let audioBuilt = false, audioOn = false;
+
+function buildAudio() {
+  if (audioBuilt) return;
+  audioBuilt = true;
+
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const master = ctx.createGain();
+  master.gain.value = 0; // starts silent
+  master.connect(ctx.destination);
+
+  // Brown noise
+  const bufSz = 2 * ctx.sampleRate;
+  const buf = ctx.createBuffer(2, bufSz, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    let last = 0;
+    for (let i = 0; i < bufSz; i++) {
+      d[i] = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+      last = d[i]; d[i] *= 3.5;
+    }
+  }
+  const noise = ctx.createBufferSource();
+  noise.buffer = buf; noise.loop = true; noise.start();
+
+  const bp1 = ctx.createBiquadFilter();
+  bp1.type = 'bandpass'; bp1.frequency.value = 180; bp1.Q.value = 0.8;
+  const bp2 = ctx.createBiquadFilter();
+  bp2.type = 'bandpass'; bp2.frequency.value = 420; bp2.Q.value = 1.2;
+  const bp2G = ctx.createGain(); bp2G.gain.value = 0.25;
+
+  noise.connect(bp1); noise.connect(bp2);
+  bp1.connect(master); bp2.connect(bp2G); bp2G.connect(master);
+
+  // Modulation
+  (function mod() {
+    const t = ctx.currentTime;
+    bp1.frequency.setTargetAtTime(120 + (Math.sin(t * 0.05) * 0.5 + 0.5) * 100, t, 2);
+    bp2.frequency.setTargetAtTime(300 + (Math.sin(t * 0.02) * 0.5 + 0.5) * 180, t, 3);
+    if (audioBuilt) requestAnimationFrame(mod);
+  })();
+
+  // Sub drone
+  const dr = ctx.createOscillator(); dr.type = 'sine'; dr.frequency.value = 55;
+  const drG = ctx.createGain(); drG.gain.value = 0.02;
+  dr.connect(drG); drG.connect(master); dr.start();
+  (function drift() {
+    dr.frequency.setTargetAtTime(50 + Math.sin(ctx.currentTime * 0.015) * 8, ctx.currentTime, 4);
+    if (audioBuilt) setTimeout(drift, 3000);
+  })();
+
+  S.audio = { master, ctx };
+}
+
+function toggleAudio() {
+  buildAudio();
+  audioOn = !audioOn;
+  const btn = document.getElementById('volBtn');
+  const { master, ctx } = S.audio;
+  if (audioOn) {
+    if (ctx.state === 'suspended') ctx.resume();
+    master.gain.setTargetAtTime(VOL, ctx.currentTime, 0.5);
+    btn.textContent = 'sound on';
+    btn.classList.add('vol-toggle--on');
+  } else {
+    master.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+    btn.textContent = 'sound off';
+    btn.classList.remove('vol-toggle--on');
+  }
+}
+
+function evolveSoundscape() {
+  if (!S.audio || !audioOn) return;
+  const { master, ctx } = S.audio;
+  const t = ctx.currentTime;
+  master.gain.setTargetAtTime(VOL * 0.4, t, 0.5);
+  master.gain.setTargetAtTime(VOL, t + 3, 1);
+}
+
+// ── Skippable sleep (for thread flash) ──
+let _skipResolve = null;
+
+function skippableSleep(ms) {
+  return new Promise(resolve => {
+    _skipResolve = resolve;
+    setTimeout(() => { _skipResolve = null; resolve(); }, ms);
+  });
+}
+
+function skipThread() {
+  document.getElementById('tf').classList.remove('tf--on');
+  if (_skipResolve) { const r = _skipResolve; _skipResolve = null; r(); }
+}
+
+function keepGoing() {
+  document.getElementById('endPrompt').classList.remove('end-prompt--on');
+  S.paused = false;
+}
+
+// ── White background detection ──
+function detectWhiteBg(imgEl) {
+  try {
+    const c = document.createElement('canvas');
+    const sz = 40;
+    c.width = sz; c.height = sz;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(imgEl, 0, 0, sz, sz);
+    const d = ctx.getImageData(0, 0, sz, sz).data;
+
+    // Sample corners and edges (first/last 2 rows, first/last 2 cols)
+    let whiteCount = 0, sampleCount = 0;
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        if (y > 2 && y < sz - 3 && x > 2 && x < sz - 3) continue; // edges only
+        const idx = (y * sz + x) * 4;
+        const r = d[idx], g = d[idx+1], b = d[idx+2];
+        sampleCount++;
+        if (r > 220 && g > 220 && b > 220) whiteCount++;
+      }
+    }
+    return sampleCount > 0 && (whiteCount / sampleCount) > 0.6;
+  } catch { return false; } // CORS or other error — skip
+}
+
+// ── Util ──
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function rand(a, b) { return a + Math.random() * (b - a); }
+
+// ── Init ──
+fetch('/api/health').then(r => r.json()).then(d => {
+  if (!d.ollama) document.querySelector('.sub').textContent = '';
+}).catch(() => {});
+</script>
+</body>
+</html>

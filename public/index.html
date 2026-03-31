@@ -10,8 +10,8 @@
   :root {
     --black: #0a0a0b;
     --ink: #141416;
-    --dim: #444;
-    --muted: #777;
+    --dim: #777;
+    --muted: #999;
     --bone: #ddd8d0;
     --accent: #c8a87a;
     --cool: #8b9dc3;
@@ -62,7 +62,7 @@
     outline: none; width: 240px;
   }
   .seed input:focus { border-color: var(--accent); }
-  .seed input::placeholder { color: #333; }
+  .seed input::placeholder { color: #888; }
   .sbtn {
     background: none; border: 1px solid #2a2a30; color: var(--dim);
     padding: 10px 18px; font-family: var(--mono); font-size: 8px;
@@ -136,12 +136,12 @@
   .hdr--on { display: flex; }
   .hdr-name {
     font-family: var(--serif); font-size: 14px; font-weight: 400;
-    color: var(--bone); opacity: 0.6; letter-spacing: 0.02em;
+    color: var(--bone); opacity: 0.85; letter-spacing: 0.02em;
     margin-left: 68px;
   }
   .hdr-threads-btn {
     margin-left: auto;
-    background: none; border: 1px solid #222; color: #444;
+    background: none; border: 1px solid #444; color: #aaa;
     padding: 3px 10px; font-family: var(--mono); font-size: 7px;
     letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
     transition: all 0.3s;
@@ -180,7 +180,7 @@
   .tarch-item {
     padding: 10px 12px;
     background: rgba(26,26,30,0.6);
-    border-left: 2px solid #222;
+    border-left: 2px solid #444;
     cursor: default;
     transition: border-color 0.2s;
   }
@@ -191,14 +191,14 @@
   }
   .tarch-item .ta-text {
     font-family: var(--serif); font-size: 14px; line-height: 1.4;
-    color: var(--bone); opacity: 0.8;
+    color: var(--bone); opacity: 0.9;
   }
   .tarch-item .ta-kw {
     font-size: 7px; letter-spacing: 0.08em; color: var(--accent);
     margin-top: 6px; opacity: 0.6;
   }
   .tarch-empty {
-    font-size: 8px; color: #333; letter-spacing: 0.1em; text-transform: uppercase;
+    font-size: 8px; color: #888; letter-spacing: 0.1em; text-transform: uppercase;
   }
 
   /* ── Canvas area ── */
@@ -236,17 +236,17 @@
   }
   .ov-kw .kc {
     font-size: 7px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: #2a2a2a; margin-bottom: 2px;
+    color: #777; margin-bottom: 2px;
   }
   .ov-kw .kw {
     font-family: var(--serif); font-size: clamp(11px, 1.4vw, 18px);
-    color: var(--bone); opacity: 0.35;
+    color: var(--bone); opacity: 0.6;
   }
   .ov-kw .kw span {
     display: inline-block; opacity: 0;
     animation: rise 0.5s ease forwards;
   }
-  .ov-kw .sep { color: #222; margin: 0 0.1em; }
+  .ov-kw .sep { color: #555; margin: 0 0.1em; }
   @keyframes rise { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; } }
 
   .ov-q {
@@ -255,11 +255,11 @@
     pointer-events: none;
   }
   .qt {
-    font-size: 7px; letter-spacing: 0.05em; color: #2a2a2a;
+    font-size: 7px; letter-spacing: 0.05em; color: #777;
     padding: 1px 4px;
     opacity: 0; animation: qf 0.3s ease forwards;
   }
-  @keyframes qf { from { opacity: 0; transform: translateX(3px); } to { opacity: 0.3; } }
+  @keyframes qf { from { opacity: 0; transform: translateX(3px); } to { opacity: 0.55; } }
 
   .ov-st {
     position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
@@ -270,7 +270,7 @@
   .ov-st .dot { width: 4px; height: 4px; border-radius: 50%; background: #333; }
   .ov-st .dot--on { background: var(--accent); animation: p 1.2s ease infinite; }
   @keyframes p { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
-  .ov-st .stxt { font-size: 7px; letter-spacing: 0.1em; text-transform: uppercase; color: #333; }
+  .ov-st .stxt { font-size: 7px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; }
 
   /* ── Thread flash ── */
   .tf {
@@ -365,11 +365,11 @@
     pointer-events: none;
   }
   .gal-preview .gp-info .gp-cycle {
-    font-size: 7px; letter-spacing: 0.12em; text-transform: uppercase; color: #333;
+    font-size: 7px; letter-spacing: 0.12em; text-transform: uppercase; color: #888;
   }
   .gal-preview .gp-info .gp-kw {
     font-family: var(--serif); font-size: clamp(11px, 1.4vw, 18px);
-    color: var(--bone); opacity: 0.4;
+    color: var(--bone); opacity: 0.7;
   }
   .gal-preview .gp-canvas {
     position: absolute; inset: 0;
@@ -380,14 +380,14 @@
     position: fixed; bottom: 12px; right: 12px; z-index: 20;
     background: rgba(10,10,11,0.5); border: 1px solid #1e1e22;
     backdrop-filter: blur(6px);
-    color: #333; padding: 5px 10px;
+    color: #888; padding: 5px 10px;
     font-family: var(--mono); font-size: 7px;
     letter-spacing: 0.1em; text-transform: uppercase;
     cursor: pointer; transition: all 0.3s;
     display: none;
   }
   .vol-toggle:hover { border-color: var(--accent); color: var(--accent); }
-  .vol-toggle--on { color: var(--muted); border-color: #333; }
+  .vol-toggle--on { color: var(--muted); border-color: #888; }
 
   /* ── Lightbox ── */
   .lb {
@@ -633,7 +633,7 @@ function buildComp(images) {
 
     // Detect white background on load → set multiply blend
     imgEl.addEventListener('load', function() {
-      if (detectWhiteBg(this)) {
+      if (detectLightBg(this)) {
         this.parentElement.style.mixBlendMode = 'multiply';
       }
     });
@@ -1044,29 +1044,35 @@ function keepGoing() {
   S.paused = false;
 }
 
-// ── White background detection ──
-function detectWhiteBg(imgEl) {
+// ── Light background detection ──
+// Returns true if image has a light/white background — should get multiply blend
+function detectLightBg(imgEl) {
   try {
     const c = document.createElement('canvas');
-    const sz = 40;
+    const sz = 50;
     c.width = sz; c.height = sz;
     const ctx = c.getContext('2d');
     ctx.drawImage(imgEl, 0, 0, sz, sz);
     const d = ctx.getImageData(0, 0, sz, sz).data;
 
-    // Sample corners and edges (first/last 2 rows, first/last 2 cols)
-    let whiteCount = 0, sampleCount = 0;
+    // Sample edges (4px border) AND corners (8x8 blocks)
+    let lightCount = 0, sampleCount = 0;
     for (let y = 0; y < sz; y++) {
       for (let x = 0; x < sz; x++) {
-        if (y > 2 && y < sz - 3 && x > 2 && x < sz - 3) continue; // edges only
+        const isEdge = y < 4 || y >= sz - 4 || x < 4 || x >= sz - 4;
+        const isCorner = (y < 8 && x < 8) || (y < 8 && x >= sz - 8) ||
+                         (y >= sz - 8 && x < 8) || (y >= sz - 8 && x >= sz - 8);
+        if (!isEdge && !isCorner) continue;
         const idx = (y * sz + x) * 4;
         const r = d[idx], g = d[idx+1], b = d[idx+2];
         sampleCount++;
-        if (r > 220 && g > 220 && b > 220) whiteCount++;
+        // Detect light backgrounds: white, cream, beige, light gray
+        const brightness = (r + g + b) / 3;
+        if (brightness > 190) lightCount++;
       }
     }
-    return sampleCount > 0 && (whiteCount / sampleCount) > 0.6;
-  } catch { return false; } // CORS or other error — skip
+    return sampleCount > 0 && (lightCount / sampleCount) > 0.45;
+  } catch { return false; }
 }
 
 // ── Util ──

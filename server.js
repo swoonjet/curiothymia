@@ -6,6 +6,7 @@ const https = require('https');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434';
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -14,13 +15,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 // HEALTH
 // ═══════════════════════════════════════════════
 app.get('/api/health', async (req, res) => {
+  let ollama = false, models = [];
   try {
     const data = await ollamaRequest('/api/tags', 'GET');
-    const models = (data.models || []).map(m => m.name);
-    res.json({ status: 'ok', ollama: true, models });
-  } catch {
-    res.json({ status: 'ok', ollama: false, models: [] });
-  }
+    models = (data.models || []).map(m => m.name);
+    ollama = true;
+  } catch {}
+  const claude = !!ANTHROPIC_API_KEY;
+  const llm = ollama ? 'ollama' : claude ? 'claude' : 'none';
+  res.json({ status: 'ok', ollama, claude, llm, models });
 });
 
 // ═══════════════════════════════════════════════
@@ -64,15 +67,9 @@ Generate exactly 10 search queries. Rules:
 One query per line. No numbering, labels, or quotes. Just the short search terms.`;
 
   try {
-    const data = await ollamaRequest('/api/generate', 'POST', {
-      model: 'mistral',
-      prompt,
-      system,
-      stream: false,
-      options: { temperature: 1.2, top_p: 0.95, num_predict: 150 }
-    });
+    const response = await generateText({ system, prompt, temperature: 1.1, maxTokens: 150 });
     const kwLower = keywords.map(k => k.toLowerCase());
-    const queries = data.response
+    const queries = response
       .split('\n')
       .map(l => l.replace(/^\s*[\d]+[\.\)\-\:]+\s*/, '').replace(/^[\-\*\u2022]+\s*/, '').replace(/^["']|["']$/g, '').trim())
       .filter(l => l.length > 1 && l.length < 50)
@@ -284,14 +281,8 @@ Ask what they now understand about the ORIGINAL seeds (${keywords.join(', ')}) t
   };
 
   try {
-    const data = await ollamaRequest('/api/generate', 'POST', {
-      model: 'mistral',
-      prompt: prompts[step] || prompts[1],
-      system,
-      stream: false,
-      options: { temperature: 0.9, num_predict: 100 }
-    });
-    res.json({ question: data.response.trim() });
+    const response = await generateText({ system, prompt: prompts[step] || prompts[1], temperature: 0.9, maxTokens: 100 });
+    res.json({ question: response.trim() });
   } catch (e) {
     res.status(502).json({ error: 'Question generation failed', fallback: true });
   }
@@ -338,14 +329,8 @@ THREAD: [your concrete observation]
 NEXT: [kw1], [kw2], [kw3], [kw4], [kw5]`;
 
   try {
-    const data = await ollamaRequest('/api/generate', 'POST', {
-      model: 'mistral',
-      prompt,
-      system,
-      stream: false,
-      options: { temperature: 0.95, num_predict: 200 }
-    });
-    res.json({ response: data.response });
+    const response = await generateText({ system, prompt, temperature: 0.95, maxTokens: 250 });
+    res.json({ response });
   } catch (e) {
     console.error('Synthesis error:', e.message);
     res.status(502).json({ error: 'Synthesis unavailable', fallback: true });
@@ -553,6 +538,69 @@ async function searchNASA(query) {
 }
 
 // ═══════════════════════════════════════════════
+// LLM ABSTRACTION — Ollama first, Claude API fallback
+// ═══════════════════════════════════════════════
+
+async function generateText({ system, prompt, temperature = 0.9, maxTokens = 200 }) {
+  // Try Ollama first
+  try {
+    const data = await ollamaRequest('/api/generate', 'POST', {
+      model: 'mistral',
+      prompt,
+      system: system || '',
+      stream: false,
+      options: { temperature, num_predict: maxTokens }
+    });
+    if (data.response) return data.response;
+  } catch (e) {
+    console.log('Ollama unavailable, trying Claude API...');
+  }
+
+  // Fall back to Anthropic API
+  if (!ANTHROPIC_API_KEY) throw new Error('No LLM available');
+
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: maxTokens,
+      system: system || undefined,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const options = {
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      timeout: 30000
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.content && parsed.content[0]) {
+            resolve(parsed.content[0].text);
+          } else {
+            reject(new Error('Empty Claude response'));
+          }
+        } catch { reject(new Error('Invalid JSON from Claude API')); }
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Claude API timeout')); });
+    req.write(body);
+    req.end();
+  });
+}
+
+// ═══════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════
 
@@ -627,6 +675,7 @@ app.listen(PORT, () => {
   console.log('  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d');
   console.log('');
   console.log(`  Ollama: ${OLLAMA_HOST}`);
+  console.log(`  Claude API: ${ANTHROPIC_API_KEY ? 'configured' : 'not set (set ANTHROPIC_API_KEY)'}`);
   console.log('  Sources: AIC \u00b7 Met \u00b7 Cleveland \u00b7 Europeana \u00b7 Wikimedia \u00b7 LOC \u00b7 Archive \u00b7 iNaturalist \u00b7 NASA');
   console.log('  Press Ctrl+C to stop.');
   console.log('');

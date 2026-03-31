@@ -1082,8 +1082,8 @@ function rand(a, b) { return a + Math.random() * (b - a); }
 
 // ── Init ──
 fetch('/api/health').then(r => r.json()).then(d => {
-  if (!d.ollama) document.querySelector('.sub').textContent = '';
-}).catch(() => {});
+  S.llm = d.llm || 'none';
+}).catch(() => { S.llm = 'none'; });
 </script>
 </body>
 </html>

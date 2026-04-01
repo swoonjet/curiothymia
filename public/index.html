@@ -351,10 +351,10 @@
   }
   .gal-preview--on { opacity: 1; pointer-events: auto; }
   .gal-preview .gp-close {
-    position: absolute; top: 16px; right: 20px; z-index: 32;
+    position: absolute; top: 12px; left: 82px; z-index: 32;
     background: rgba(10,10,11,0.8); border: 1px solid var(--bone);
     color: var(--bone);
-    padding: 10px 24px; font-family: var(--mono); font-size: 9px;
+    padding: 8px 20px; font-family: var(--mono); font-size: 8px;
     letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
     transition: all 0.3s;
     backdrop-filter: blur(8px);
@@ -542,7 +542,7 @@ const COLOR_FX = [
   'brightness(1.1) hue-rotate(-20deg) saturate(1.2)',
 ];
 
-function buildComp(images) {
+function buildComp(images, preview) {
   const comp = document.createElement('div');
   comp.className = 'comp comp--entering';
 
@@ -625,7 +625,9 @@ function buildComp(images) {
     });
 
     lyr.appendChild(imgEl);
-    lyr.addEventListener('click', e => { e.stopPropagation(); openLb(img); });
+    if (!preview) {
+      lyr.addEventListener('click', e => { e.stopPropagation(); openLb(img); });
+    }
     comp.appendChild(lyr);
   }
 
@@ -695,29 +697,40 @@ function renderGal() {
   list.scrollTop = list.scrollHeight;
 }
 
+let gpBoardIdx = -1;
+
 function viewBoard(idx) {
-  const b = S.boards[idx];
+  gpBoardIdx = idx;
+  renderGpBoard();
+}
+
+function renderGpBoard() {
+  const b = S.boards[gpBoardIdx];
   if (!b) return;
 
-  // Build comp into the preview overlay — doesn't touch the main canvas
   const gpCanvas = document.getElementById('gpCanvas');
   gpCanvas.innerHTML = '';
 
-  const previewComp = buildComp(b.images);
+  const previewComp = buildComp(b.images, true); // true = preview mode (no lightbox)
   previewComp.classList.remove('comp--entering');
   previewComp.classList.add('comp--visible');
-  // Make layers visible immediately
   gpCanvas.appendChild(previewComp);
   setTimeout(() => {
     previewComp.querySelectorAll('.lyr').forEach(l => l.classList.add('lyr--on'));
   }, 50);
 
   document.getElementById('gpCycle').textContent =
-    `thread ${String(b.cycle).padStart(2, '0')} \u2014 ${b.images.length} artifacts`;
+    `${String(b.cycle).padStart(2, '0')} \u2014 ${b.images.length} artifacts`;
   document.getElementById('gpKw').textContent = b.kw.join(' / ');
 
   document.getElementById('gp').classList.add('gal-preview--on');
-  document.querySelectorAll('.gt').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.gt').forEach((t, i) => t.classList.toggle('active', i === gpBoardIdx));
+
+  // Click anywhere on the preview canvas to regenerate the layout
+  gpCanvas.onclick = (e) => {
+    e.stopPropagation();
+    renderGpBoard(); // rebuild with new random positions/blends/effects
+  };
 }
 
 function closeGp() {

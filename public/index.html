@@ -281,7 +281,7 @@
     opacity: 0; pointer-events: none;
     transition: opacity 0.8s ease;
   }
-  .tf--on { opacity: 1; cursor: pointer; }
+  .tf--on { opacity: 1; cursor: pointer; pointer-events: auto; }
   .tf .tfl { font-size: 7px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
   .tf .tft {
     font-family: var(--serif); font-size: clamp(15px, 2.2vw, 30px);
@@ -848,7 +848,9 @@ async function runCycle() {
   document.getElementById('tfn').innerHTML = next.map((k, i) =>
     `<span class="tfk" style="animation-delay:${200 + i * 150}ms">${esc(k)}</span>`
   ).join('');
-  document.getElementById('tf').classList.add('tf--on');
+  const tfEl = document.getElementById('tf');
+  tfEl.style.pointerEvents = '';
+  tfEl.classList.add('tf--on');
   await skippableSleep(10000);
   document.getElementById('tf').classList.remove('tf--on');
   await sleep(700);
@@ -1025,7 +1027,9 @@ function skippableSleep(ms) {
 
 function skipThread(e) {
   if (e) { e.stopPropagation(); e.preventDefault(); }
-  document.getElementById('tf').classList.remove('tf--on');
+  const tf = document.getElementById('tf');
+  tf.style.pointerEvents = 'none';
+  tf.classList.remove('tf--on');
   if (_skipResolve) { const r = _skipResolve; _skipResolve = null; r(); }
 }
 

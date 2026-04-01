@@ -441,7 +441,7 @@
   <span class="stxt" id="stxt"></span>
 </div>
 
-<div class="tf" id="tf" onclick="skipThread()">
+<div class="tf" id="tf" onclick="skipThread(event)">
   <div class="tfl" id="tfl"></div>
   <div class="tft" id="tft"></div>
   <div class="tfn" id="tfn"></div>
@@ -1023,7 +1023,8 @@ function skippableSleep(ms) {
   });
 }
 
-function skipThread() {
+function skipThread(e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
   document.getElementById('tf').classList.remove('tf--on');
   if (_skipResolve) { const r = _skipResolve; _skipResolve = null; r(); }
 }

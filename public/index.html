@@ -281,7 +281,7 @@
     opacity: 0; pointer-events: none;
     transition: opacity 0.8s ease;
   }
-  .tf--on { opacity: 1; }
+  .tf--on { opacity: 1; cursor: pointer; }
   .tf .tfl { font-size: 7px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
   .tf .tft {
     font-family: var(--serif); font-size: clamp(15px, 2.2vw, 30px);
@@ -289,14 +289,6 @@
     max-width: 50%; line-height: 1.3;
   }
   .tf .tfn { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
-  .tf .tf-close {
-    margin-top: 16px;
-    background: none; border: 1px solid #2a2a30; color: var(--dim);
-    padding: 6px 16px; font-family: var(--mono); font-size: 7px;
-    letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
-    transition: all 0.3s;
-  }
-  .tf .tf-close:hover { border-color: var(--accent); color: var(--accent); }
 
   /* ── End prompt ── */
   .end-prompt {
@@ -449,11 +441,11 @@
   <span class="stxt" id="stxt"></span>
 </div>
 
-<div class="tf" id="tf">
+<div class="tf" id="tf" onclick="skipThread()">
   <div class="tfl" id="tfl"></div>
   <div class="tft" id="tft"></div>
   <div class="tfn" id="tfn"></div>
-  <button class="tf-close" onclick="skipThread()">continue</button>
+
 </div>
 
 <div class="end-prompt" id="endPrompt">

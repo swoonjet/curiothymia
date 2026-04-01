@@ -111,11 +111,12 @@ One query per line. No numbering, labels, or quotes. Just the short search terms
 // ═══════════════════════════════════════════════
 app.post('/api/search', async (req, res) => {
   try {
-    const { queries, exclude = [] } = req.body;
+    const { queries, exclude = [], excludeTitles = [] } = req.body;
     if (!queries || queries.length === 0) {
       return res.json({ images: [], total: 0 });
     }
     const excludeSet = new Set(exclude);
+    const excludeTitleSet = new Set(excludeTitles.map(t => t.toLowerCase().trim()));
 
     const allResults = [];
 
@@ -161,19 +162,30 @@ app.post('/api/search', async (req, res) => {
       }
     }
 
-    // Filter out text-heavy content (newspapers, documents, ledgers)
+    // Filter out text-heavy content
     const TEXT_REJECT = /\b(newspaper|gazette|journal|ledger|proceedings|minutes|census|directory|catalog|catalogue|periodical|bulletin|advertisement|advert|classified|obituar|clipping|front page|editorial|masthead|broadside|pamphlet|circular|handbill|leaflet|transcript|index|register|vol\.|issue\s+\d|page\s+\d|pp\.\s*\d)\b/i;
+
+    // Filter out famous recognizable artworks
+    const FAMOUS_REJECT = /\b(mona lisa|starry night|girl with a pearl|the scream|water lilies|guernica|the kiss|birth of venus|american gothic|nighthawks|great wave|kanagawa|persistence of memory|the thinker|david michelangelo|sistine chapel|last supper|creation of adam|liberty leading|wanderer above|olympia manet|impression sunrise|sunday afternoon|seurat|whistler.s mother|arrangement in grey|the hay wain|the raft of the medusa|saturn devouring|garden of earthly|night watch|les demoiselles|campbell.s soup|marilyn diptych|dogs playing poker)\b/i;
+
     const filtered = allResults.filter(img => {
-      const t = (img.title || '') + ' ' + (img.source || '');
-      return !TEXT_REJECT.test(t);
+      const t = (img.title || '') + ' ' + (img.artist || '') + ' ' + (img.source || '');
+      if (TEXT_REJECT.test(t)) return false;
+      if (FAMOUS_REJECT.test(t)) return false;
+      return true;
     });
 
-    // Deduplicate and exclude previously seen images
-    const seen = new Set(excludeSet);
+    // Deduplicate by URL AND by title — exclude previously seen
+    const seenUrls = new Set(excludeSet);
+    const seenTitles = new Set(excludeTitleSet);
     const unique = filtered.filter(img => {
-      const key = img.imageUrl || img.thumbUrl;
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
+      const url = img.imageUrl || img.thumbUrl;
+      const title = (img.title || '').toLowerCase().trim();
+      if (!url || seenUrls.has(url)) return false;
+      // Skip if we've already shown something with the same title
+      if (title && title !== 'untitled' && seenTitles.has(title)) return false;
+      seenUrls.add(url);
+      if (title) seenTitles.add(title);
       return true;
     });
 
@@ -343,7 +355,8 @@ NEXT: [kw1], [kw2], [kw3], [kw4], [kw5]`;
 
 // Art Institute of Chicago — reliable, CORS, no key needed
 async function searchArtIC(query) {
-  const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(query)}&fields=id,title,image_id,artist_display,date_display&limit=8`;
+  const page = Math.floor(Math.random() * 5) + 1;
+  const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(query)}&fields=id,title,image_id,artist_display,date_display&limit=8&page=${page}`;
   const data = await fetchJSON(url);
   return (data.data || [])
     .filter(item => item.image_id)
@@ -361,7 +374,7 @@ async function searchArtIC(query) {
 
 // Europeana — huge, reliable
 async function searchEuropeana(query) {
-  const start = Math.floor(Math.random() * 5) + 1; // randomize page
+  const start = Math.floor(Math.random() * 20) + 1;
   const url = `https://api.europeana.eu/record/v2/search.json?wskey=api2demo&query=${encodeURIComponent(query)}&media=true&thumbnail=true&rows=10&start=${start}&profile=rich&qf=TYPE:IMAGE`;
   const data = await fetchJSON(url);
   return (data.items || [])
@@ -410,7 +423,11 @@ async function searchMet(query) {
   if (!searchData.objectIDs || searchData.objectIDs.length === 0) return [];
 
   // Random subset for variety, limit to 4 to keep things fast
-  const ids = searchData.objectIDs.sort(() => Math.random() - 0.5).slice(0, 6);
+  // Skip past the first results (often famous pieces) and pick randomly from deeper
+  const pool = searchData.objectIDs.length > 20
+    ? searchData.objectIDs.slice(10)
+    : searchData.objectIDs;
+  const ids = pool.sort(() => Math.random() - 0.5).slice(0, 6);
   const objects = await Promise.allSettled(
     ids.map(id => fetchJSON(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`))
   );
@@ -434,7 +451,8 @@ async function searchMet(query) {
 
 // Cleveland Museum of Art — strong contemporary + modern collection, open access
 async function searchCleveland(query) {
-  const url = `https://openaccess-api.clevelandart.org/api/artworks/?q=${encodeURIComponent(query)}&has_image=1&limit=8`;
+  const skip = Math.floor(Math.random() * 20);
+  const url = `https://openaccess-api.clevelandart.org/api/artworks/?q=${encodeURIComponent(query)}&has_image=1&limit=8&skip=${skip}`;
   const data = await fetchJSON(url);
   return (data.data || [])
     .filter(r => r.images && r.images.web && r.images.web.url)

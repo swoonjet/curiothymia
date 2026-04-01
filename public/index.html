@@ -495,7 +495,7 @@
 const S = {
   seeds: [], kw: [], cycle: 0, running: false, paused: false,
   prev: [], images: [], queries: [], thread: '', hold: 10000,
-  boards: [], seenUrls: [], threads: []
+  boards: [], seenUrls: [], seenTitles: [], threads: []
 };
 
 // ── Seeds ──
@@ -772,12 +772,12 @@ async function runCycle() {
 
   setSt('searching', true);
   // Send last 100 seen URLs to avoid repeats
-  const exclude = S.seenUrls.slice(-100);
+  const exclude = S.seenUrls;
   let images = [];
   try {
     const r = await fetch('/api/search', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ queries, exclude })
+      body: JSON.stringify({ queries, exclude, excludeTitles: S.seenTitles })
     });
     images = (await r.json()).images || [];
   } catch {}
@@ -785,7 +785,7 @@ async function runCycle() {
     try {
       const r = await fetch('/api/search', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ queries: [S.kw.join(' ')], exclude })
+        body: JSON.stringify({ queries: [S.kw.join(' ')], exclude, excludeTitles: S.seenTitles })
       });
       images = (await r.json()).images || [];
     } catch {}
@@ -806,9 +806,10 @@ async function runCycle() {
   }
 
   S.images = images.slice(0, 20);
-  // Track seen URLs
+  // Track seen URLs and titles
   S.images.forEach(img => {
     S.seenUrls.push(img.imageUrl || img.thumbUrl);
+    if (img.title) S.seenTitles.push(img.title.toLowerCase().trim());
   });
   setSt(`${S.cycle}`, false);
 
@@ -901,7 +902,7 @@ function resume() {
 }
 function restart() {
   S.running = false; S.paused = false; S.cycle = 0; S.prev = []; S.seeds = [];
-  S.boards = []; S.seenUrls = []; S.threads = [];
+  S.boards = []; S.seenUrls = []; S.seenTitles = []; S.threads = [];
   document.getElementById('pov').classList.remove('pov--on');
   document.getElementById('endPrompt').classList.remove('end-prompt--on');
   document.getElementById('st').style.display = 'none';

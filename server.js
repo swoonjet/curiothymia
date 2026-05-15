@@ -605,8 +605,10 @@ async function generateText({ system, prompt, temperature = 0.9, maxTokens = 200
           const parsed = JSON.parse(data);
           if (parsed.content && parsed.content[0]) {
             resolve(parsed.content[0].text);
+          } else if (parsed.error && parsed.error.message) {
+            reject(new Error(`Claude API ${parsed.error.type || res.statusCode}: ${parsed.error.message}`));
           } else {
-            reject(new Error('Empty Claude response'));
+            reject(new Error(`Claude API HTTP ${res.statusCode}: ${data.slice(0, 200)}`));
           }
         } catch { reject(new Error('Invalid JSON from Claude API')); }
       });
